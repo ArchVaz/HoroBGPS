@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v12-reset-confirm-toast-fix';
+const CACHE_NAME = 'horo-v13-custom-reset-modal';
 const ASSETS = [
   './',
   './index.html',
