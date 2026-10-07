@@ -10,6 +10,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="放浪">
 
+  <!-- Leaflet CSS & JS for Full Interactive GIS Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
     :root {
       --bg-black: #000000;
@@ -311,12 +315,27 @@
       text-align: center;
     }
 
+    /* Fixed Explicit Map Container Dimensions */
+    #map {
+      width: 100%;
+      height: 200px;
+      min-height: 200px;
+      border-radius: 10px;
+      background: #000000;
+      z-index: 1;
+    }
+
     .canvas-box {
       width: 100%;
       height: 120px;
       background: #050505;
       border-radius: 8px;
       display: block;
+    }
+
+    /* Dark Mode Filter for Map Tiles */
+    .leaflet-tile {
+      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
     .controls-grid {
@@ -423,8 +442,8 @@
           <label class="switch"><input type="checkbox" id="chk-chart" onchange="updateLayout()"><span class="slider"></span></label>
         </div>
         <div class="toggle-item">
-          <span class="toggle-label">GPS Route Plotter</span>
-          <label class="switch"><input type="checkbox" id="chk-map" onchange="updateLayout()"><span class="slider"></span></label>
+          <span class="toggle-label">GPS Map View</span>
+          <label class="switch"><input type="checkbox" id="chk-map" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
       </div>
     </div>
@@ -473,9 +492,8 @@
       <canvas id="eleCanvas" class="canvas-box"></canvas>
     </div>
 
-    <div id="card-map" class="card hidden">
-      <div class="metric-label" style="margin-bottom: 8px;">GPS Route Plotter</div>
-      <canvas id="routeCanvas" class="canvas-box"></canvas>
+    <div id="card-map" class="card" style="padding: 4px;">
+      <div id="map"></div>
     </div>
   </div>
 
@@ -486,7 +504,7 @@
   </div>
 
   <script>
-    // Standard File-Based Service Worker Registration
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(() => {
         document.getElementById('statusText').innerText = 'OFFLINE READY';
@@ -509,20 +527,29 @@
     let lastPosition = null;
 
     let eleHistory = [];
-    let routeHistory = [];
+    let map, routePolyline, userMarker;
 
     window.onload = () => {
       loadLayoutPreferences();
-      resizeCanvases();
+      initMap();
     };
 
-    window.onresize = resizeCanvases;
+    function initMap() {
+      if (typeof L === 'undefined') return;
+      
+      // Default view over general geographic region until GPS fix
+      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
+      
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        maxZoom: 19,
+        crossOrigin: true
+      }).addTo(map);
 
-    function resizeCanvases() {
-      const ec = document.getElementById('eleCanvas');
-      const rc = document.getElementById('routeCanvas');
-      if (ec) { ec.width = ec.clientWidth; ec.height = ec.clientHeight; drawElevationChart(); }
-      if (rc) { rc.width = rc.clientWidth; rc.height = rc.clientHeight; drawRouteMap(); }
+      routePolyline = L.polyline([], { color: '#30d158', weight: 4 }).addTo(map);
+
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 500);
     }
 
     function toggleMenu() {
@@ -559,7 +586,7 @@
       const saved = localStorage.getItem('horo_standalone_layout');
       const prefs = saved ? JSON.parse(saved) : {
         speed: true, dist: true, avg: true, max: true,
-        ele: true, alt: true, time: true, chart: false, map: false
+        ele: true, alt: true, time: true, chart: false, map: true
       };
 
       document.getElementById('chk-speed').checked = prefs.speed;
@@ -598,7 +625,9 @@
       if (visibleEle === 0) eleRow.classList.add('hidden');
       else eleRow.classList.remove('hidden');
 
-      setTimeout(resizeCanvases, 100);
+      if (p.map && map) {
+        setTimeout(() => map.invalidateSize(), 200);
+      }
     }
 
     function toggleCard(id, visible) {
@@ -670,7 +699,6 @@
       totalEleGain = 0;
       lastPosition = null;
       eleHistory = [];
-      routeHistory = [];
 
       document.getElementById('timerVal').innerText = "00:00:00";
       document.getElementById('speedVal').innerText = "0.0";
@@ -680,8 +708,7 @@
       document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
       document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
 
-      drawElevationChart();
-      drawRouteMap();
+      if (routePolyline) routePolyline.setLatLngs([]);
     }
 
     function handlePosition(pos) {
@@ -693,8 +720,20 @@
 
       if (accuracy > 20) return;
 
-      const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
+      const latLng = [lat, lon];
 
+      if (map) {
+        if (!userMarker) {
+          userMarker = L.circleMarker(latLng, { radius: 6, color: '#30d158', fillColor: '#30d158', fillOpacity: 1 }).addTo(map);
+          map.setView(latLng, 16);
+          map.invalidateSize();
+        } else {
+          userMarker.setLatLng(latLng);
+          map.panTo(latLng);
+        }
+      }
+
+      const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
       if (filteredSpeed > 0) movingTimeSecs++;
 
       if (lastPosition) {
@@ -702,25 +741,16 @@
 
         if (d > 3.0 && filteredSpeed > 0) {
           totalDistanceMeters += d;
-          routeHistory.push({ lat, lon });
+          if (routePolyline) routePolyline.addLatLng(latLng);
 
           if (alt !== null && lastPosition.altitude !== null) {
             const eleDiff = alt - lastPosition.altitude;
             if (eleDiff > 2.0) totalEleGain += eleDiff;
           }
         }
-      } else {
-        routeHistory.push({ lat, lon });
       }
 
       if (filteredSpeed > maxSpeedMps) maxSpeedMps = filteredSpeed;
-
-      if (alt !== null && filteredSpeed > 0) {
-        eleHistory.push(isMetric ? alt : alt * 3.28084);
-        drawElevationChart();
-      }
-
-      drawRouteMap();
 
       lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: filteredSpeed };
       updateDisplay(lastPosition);
@@ -754,96 +784,6 @@
 
       document.getElementById('timerVal').innerText =
         `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    function drawElevationChart() {
-      const canvas = document.getElementById('eleCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width, h = canvas.height;
-
-      ctx.clearRect(0, 0, w, h);
-      if (eleHistory.length < 2) return;
-
-      const minEle = Math.min(...eleHistory);
-      const maxEle = Math.max(...eleHistory);
-      const range = (maxEle - minEle) || 10;
-
-      ctx.beginPath();
-      ctx.moveTo(0, h);
-
-      for (let i = 0; i < eleHistory.length; i++) {
-        const x = (i / (eleHistory.length - 1)) * w;
-        const y = h - ((eleHistory[i] - minEle) / range) * (h - 20) - 10;
-        ctx.lineTo(x, y);
-      }
-
-      ctx.lineTo(w, h);
-      ctx.closePath();
-
-      ctx.fillStyle = 'rgba(48, 209, 88, 0.15)';
-      ctx.fill();
-
-      ctx.beginPath();
-      for (let i = 0; i < eleHistory.length; i++) {
-        const x = (i / (eleHistory.length - 1)) * w;
-        const y = h - ((eleHistory[i] - minEle) / range) * (h - 20) - 10;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = '#30d158';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
-
-    function drawRouteMap() {
-      const canvas = document.getElementById('routeCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width, h = canvas.height;
-
-      ctx.clearRect(0, 0, w, h);
-      if (routeHistory.length === 0) return;
-
-      let minLat = routeHistory[0].lat, maxLat = routeHistory[0].lat;
-      let minLon = routeHistory[0].lon, maxLon = routeHistory[0].lon;
-
-      routeHistory.forEach(p => {
-        if (p.lat < minLat) minLat = p.lat;
-        if (p.lat > maxLat) maxLat = p.lat;
-        if (p.lon < minLon) minLon = p.lon;
-        if (p.lon > maxLon) maxLon = p.lon;
-      });
-
-      const latRange = (maxLat - minLat) || 0.001;
-      const lonRange = (maxLon - minLon) || 0.001;
-      const padding = 20;
-
-      ctx.beginPath();
-      routeHistory.forEach((p, idx) => {
-        const x = padding + ((p.lon - minLon) / lonRange) * (w - 2 * padding);
-        const y = h - (padding + ((p.lat - minLat) / latRange) * (h - 2 * padding));
-        if (idx === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-
-      ctx.strokeStyle = '#30d158';
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-
-      const lastP = routeHistory[routeHistory.length - 1];
-      const curX = padding + ((lastP.lon - minLon) / lonRange) * (w - 2 * padding);
-      const curY = h - (padding + ((lastP.lat - minLat) / latRange) * (h - 2 * padding));
-
-      ctx.beginPath();
-      ctx.arc(curX, curY, 5, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.strokeStyle = '#30d158';
-      ctx.lineWidth = 2;
-      ctx.stroke();
     }
 
     function calcDistance(lat1, lon1, lat2, lon2) {
