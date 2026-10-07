@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v7-gps-restore';
+const CACHE_NAME = 'horo-v8-responsive-tiles';
 const ASSETS = [
   './',
   './index.html',

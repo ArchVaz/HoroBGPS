@@ -256,6 +256,7 @@
     input:checked + .slider { background-color: var(--accent-green); }
     input:checked + .slider:before { transform: translateX(18px); }
 
+    /* Main Responsive Layout */
     .dashboard-container {
       flex: 1;
       display: flex;
@@ -268,45 +269,49 @@
       display: grid;
       gap: 6px;
       width: 100%;
-      flex-shrink: 0;
+      flex: 1;
+      min-height: 0;
     }
 
     .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-1 { grid-template-columns: 1fr; }
 
     .card {
       background-color: var(--card-bg);
       border-radius: 10px;
       padding: 6px 8px;
       width: 100%;
-      flex-shrink: 0;
-    }
-
-    .card.hidden { display: none !important; }
-
-    .primary-metric {
-      text-align: center;
-      padding: 8px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      transition: flex 0.25s ease;
+      min-height: 0;
     }
 
+    .card.hidden { display: none !important; }
+
+    /* Compact Primary Speed Card Container */
+    .primary-metric {
+      flex: 1.2;
+      max-height: 22vh;
+      min-height: 85px;
+      padding: 4px 8px;
+      justify-content: center;
+      transition: max-height 0.2s ease, flex 0.2s ease;
+    }
+
+    /* Keep Speed Typography Original Size (72px) */
     .speed-value {
       font-size: 72px;
       font-weight: 800;
-      line-height: 0.95;
+      line-height: 0.9;
       letter-spacing: -2px;
-      transition: font-size 0.25s ease;
     }
 
     body.map-disabled .primary-metric {
-      flex: 1;
-    }
-
-    body.map-disabled .speed-value {
-      font-size: 88px;
+      flex: 1.8;
+      max-height: 30vh;
     }
 
     body.theme-sun .speed-value { color: var(--accent-green); }
@@ -317,31 +322,49 @@
       letter-spacing: 1px;
       color: var(--text-dim);
       text-transform: uppercase;
+      margin-bottom: 2px;
     }
 
     .unit-label {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-dim);
       font-weight: 600;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
-    .sub-metric { text-align: center; padding: 6px 2px; }
-    .sub-value { font-size: 17px; font-weight: 700; }
-    .sub-value span { font-size: 10px; color: var(--text-dim); }
+    .sub-metric {
+      text-align: center;
+      padding: 4px 2px;
+      flex: 1;
+    }
+
+    .sub-value {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .sub-value span {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .card-time-container {
+      flex: 0.8;
+      min-height: 48px;
+    }
 
     .time-display {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
       text-align: center;
+      line-height: 1;
     }
 
+    /* Balanced Responsive Map Tile */
     #card-map {
-      flex: 0.8;
-      max-height: 30vh;
-      min-height: 90px;
-      display: flex;
-      flex-direction: column;
+      flex: 1.5;
+      min-height: 100px;
       padding: 2px;
     }
 
@@ -356,6 +379,7 @@
       filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
+    /* Bottom Dock Controls */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -536,7 +560,7 @@
       </div>
     </div>
 
-    <div id="card-time" class="card sub-metric">
+    <div id="card-time" class="card sub-metric card-time-container">
       <div class="metric-label">Elapsed Time</div>
       <div id="timerVal" class="time-display">00:00:00</div>
     </div>
@@ -646,6 +670,27 @@
           else cardEl.classList.add('hidden');
         }
       });
+
+      // Dynamically adjust grid rows if stats or elevation sub-tiles are toggled
+      const statsRow = document.getElementById('row-stats');
+      const visibleStats = [
+        document.getElementById('chk-dist').checked,
+        document.getElementById('chk-avg').checked,
+        document.getElementById('chk-max').checked
+      ].filter(Boolean).length;
+      statsRow.className = `grid-row grid-${visibleStats || 1}`;
+      if (visibleStats === 0) statsRow.classList.add('hidden');
+      else statsRow.classList.remove('hidden');
+
+      const eleRow = document.getElementById('row-elevation');
+      const visibleEle = [
+        document.getElementById('chk-grade').checked,
+        document.getElementById('chk-ele').checked,
+        document.getElementById('chk-alt').checked
+      ].filter(Boolean).length;
+      eleRow.className = `grid-row grid-${visibleEle || 1}`;
+      if (visibleEle === 0) eleRow.classList.add('hidden');
+      else eleRow.classList.remove('hidden');
 
       const mapChk = document.getElementById('chk-map');
       isMapTileEnabled = mapChk ? mapChk.checked : true;
