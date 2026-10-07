@@ -5,18 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>放浪</title>
   
-  <!-- PWA & iOS Home Screen Settings -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="放浪">
 
-  <!-- Leaflet GIS Map Library -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root {
-      /* Default Original Scheme */
       --bg-black: #000000;
       --card-bg: #000000;
       --border-subtle: #1a1a1a;
@@ -25,20 +22,13 @@
       --accent-green: #30d158;
       --accent-red: #ff453a;
       --accent-orange: #ff9f0a;
-      --map-route-color: #30d158;
     }
 
-    /* High-Contrast Direct Sunlight Solar Mode */
     body.theme-sun {
-      --bg-black: #000000;
-      --card-bg: #000000;
       --border-subtle: #333333;
-      --text-white: #ffffff;
       --text-dim: #a0a0a0;
-      --accent-green: #00ff66;   /* Peak optical luminance green */
-      --accent-red: #ff3b30;
+      --accent-green: #00ff66;
       --accent-orange: #ffcc00;
-      --map-route-color: #00ff66;
     }
 
     * {
@@ -49,7 +39,6 @@
       -webkit-user-select: none;
     }
 
-    /* Viewport Height Lock - Prevents Page Scrolling */
     html, body {
       height: 100%;
       height: 100dvh;
@@ -59,14 +48,13 @@
     body {
       background-color: var(--bg-black);
       color: var(--text-white);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
       display: flex;
       flex-direction: column;
       padding: 8px;
       gap: 6px;
     }
 
-    /* Header */
     .header {
       display: flex;
       align-items: center;
@@ -79,7 +67,6 @@
       height: 22px;
       width: auto;
       object-fit: contain;
-      display: block;
     }
 
     .header-actions {
@@ -117,35 +104,10 @@
       color: var(--text-white);
       font-size: 20px;
       cursor: pointer;
-      padding: 2px 6px;
+      padding: 4px 8px;
     }
 
-    /* Toast Notification Overlay */
-    .toast-notification {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      background: #111111;
-      border: 1px solid var(--accent-green);
-      color: var(--accent-green);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      z-index: 10000;
-      opacity: 0;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-      pointer-events: none;
-    }
-
-    .toast-notification.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    /* Modal Styling */
+    /* Modal Overlay */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -159,12 +121,11 @@
     }
 
     .modal-overlay.active {
-      display: flex;
+      display: flex !important;
     }
 
     .modal-content {
       background: var(--bg-black);
-      border: none;
       border-radius: 16px;
       width: 100%;
       max-width: 380px;
@@ -172,7 +133,6 @@
       display: flex;
       flex-direction: column;
       padding: 16px;
-      overflow: hidden;
     }
 
     .modal-header {
@@ -188,7 +148,6 @@
       font-size: 13px;
       font-weight: 700;
       letter-spacing: 1.2px;
-      color: var(--text-white);
     }
 
     .close-btn {
@@ -205,7 +164,6 @@
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       margin-bottom: 10px;
-      overflow: hidden;
     }
 
     .tab-btn {
@@ -216,10 +174,7 @@
       color: var(--text-dim);
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 1px;
       cursor: pointer;
-      text-align: center;
-      transition: background 0.15s, color 0.15s;
     }
 
     .tab-btn.active {
@@ -232,19 +187,11 @@
       flex-direction: column;
       gap: 8px;
       overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding-right: 2px;
       max-height: 60vh;
     }
 
     .tab-content.active {
       display: flex;
-    }
-
-    .toggle-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
     }
 
     .toggle-item {
@@ -255,22 +202,6 @@
       background: #0a0a0a;
       border-radius: 8px;
       border: 1px solid var(--border-subtle);
-      touch-action: pan-y;
-    }
-
-    .toggle-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .order-btn {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 11px;
-      padding: 2px;
-      cursor: pointer;
     }
 
     .toggle-label {
@@ -283,7 +214,6 @@
       background: #000;
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      overflow: hidden;
     }
 
     .unit-opt {
@@ -308,85 +238,26 @@
       height: 20px;
     }
 
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+    .switch input { opacity: 0; width: 0; height: 0; }
 
     .slider {
-      position: absolute;
-      cursor: pointer;
+      position: absolute; cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
       background-color: #2c2c2e;
-      transition: .2s;
       border-radius: 20px;
+      transition: .2s;
     }
 
     .slider:before {
-      position: absolute;
-      content: "";
-      height: 14px;
-      width: 14px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .2s;
-      border-radius: 50%;
+      position: absolute; content: "";
+      height: 14px; width: 14px; left: 3px; bottom: 3px;
+      background-color: white; border-radius: 50%; transition: .2s;
     }
 
-    input:checked + .slider {
-      background-color: var(--accent-green);
-    }
+    input:checked + .slider { background-color: var(--accent-green); }
+    input:checked + .slider:before { transform: translateX(18px); }
 
-    input:checked + .slider:before {
-      transform: translateX(18px);
-    }
-
-    .history-item {
-      background: #0a0a0a;
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .history-date {
-      font-size: 10px;
-      color: var(--text-dim);
-      font-weight: 700;
-      margin-bottom: 2px;
-    }
-
-    .history-stats {
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .history-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .history-btn {
-      background: #181818;
-      border: 1px solid var(--border-subtle);
-      color: var(--text-white);
-      padding: 5px 8px;
-      font-size: 9px;
-      font-weight: 700;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .history-btn.gpx-btn {
-      color: var(--accent-green);
-      border-color: rgba(48, 209, 88, 0.3);
-    }
-
-    /* Dashboard Container - Flex 1 Fills All Vertical Space */
+    /* Dashboard Layout & Dynamic Scaling */
     .dashboard-container {
       flex: 1;
       display: flex;
@@ -403,23 +274,17 @@
     }
 
     .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-    .grid-2 { grid-template-columns: 1fr 1fr; }
-    .grid-1 { grid-template-columns: 1fr; }
 
     .card {
       background-color: var(--card-bg);
-      border: none !important;
       border-radius: 10px;
       padding: 6px 8px;
       width: 100%;
       flex-shrink: 0;
     }
 
-    .card.hidden {
-      display: none !important;
-    }
+    .card.hidden { display: none !important; }
 
-    /* Speed Tile Sizing - Dynamically Scales When Map is Off */
     .primary-metric {
       text-align: center;
       padding: 8px;
@@ -427,30 +292,27 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      transition: flex 0.2s ease, font-size 0.2s ease;
+      transition: flex 0.25s ease;
     }
 
     .speed-value {
-      font-size: 72px;
+      font-size: 64px;
       font-weight: 800;
       line-height: 0.95;
       letter-spacing: -2px;
-      color: var(--text-white);
-      transition: font-size 0.2s ease;
+      transition: font-size 0.25s ease;
     }
 
-    /* When Map Tile is Disabled: Expand Speed Tile & Increase Typography */
+    /* Expand Speed Tile & Numbers When Map is OFF */
     body.map-disabled .primary-metric {
       flex: 1;
     }
 
     body.map-disabled .speed-value {
-      font-size: 110px;
+      font-size: 115px;
     }
 
-    body.theme-sun .speed-value {
-      color: var(--accent-green);
-    }
+    body.theme-sun .speed-value { color: var(--accent-green); }
 
     .metric-label {
       font-size: 9px;
@@ -458,7 +320,6 @@
       letter-spacing: 1px;
       color: var(--text-dim);
       text-transform: uppercase;
-      margin-bottom: 2px;
     }
 
     .unit-label {
@@ -468,45 +329,20 @@
       margin-top: 2px;
     }
 
-    .sub-metric {
-      text-align: center;
-      padding: 6px 2px;
-    }
-
-    .sub-value {
-      font-size: 17px;
-      font-weight: 700;
-      margin-top: 1px;
-      color: var(--text-white);
-    }
-
-    .sub-value span {
-      font-size: 10px;
-      color: var(--text-dim);
-      font-weight: 500;
-    }
+    .sub-metric { text-align: center; padding: 6px 2px; }
+    .sub-value { font-size: 17px; font-weight: 700; }
+    .sub-value span { font-size: 10px; color: var(--text-dim); }
 
     .time-display {
       font-size: 28px;
       font-weight: 800;
-      letter-spacing: 1px;
-      font-variant-numeric: tabular-nums;
       text-align: center;
-      color: var(--text-white);
     }
 
-    .canvas-box {
-      width: 100%;
-      height: 80px;
-      background: #000000;
-      border-radius: 6px;
-      display: block;
-    }
-
-    /* Compact Map Tile - Capped at 32% screen height so Speed Tile is always dominant */
+    /* Map Tile Sizing */
     #card-map {
       flex: 0.8;
-      max-height: 32vh;
+      max-height: 30vh;
       min-height: 90px;
       display: flex;
       flex-direction: column;
@@ -518,24 +354,20 @@
       height: 100%;
       border-radius: 8px;
       background: #000000;
-      z-index: 1;
     }
 
     .leaflet-tile {
       filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
-    /* Fixed Bottom Control Dock */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 6px;
       max-width: 400px;
       width: 100%;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 0 auto;
       flex-shrink: 0;
-      padding-top: 2px;
     }
 
     .btn {
@@ -546,16 +378,10 @@
       padding: 12px 0;
       font-size: 10px;
       font-weight: 800;
-      letter-spacing: 1px;
       border-radius: 8px;
       cursor: pointer;
       text-align: center;
       overflow: hidden;
-      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
-    }
-
-    .btn:active {
-      background-color: #1a1a1a;
     }
 
     .btn.active-start {
@@ -570,15 +396,7 @@
       background-color: rgba(255, 159, 10, 0.1) !important;
     }
 
-    .btn.btn-reset {
-      border-color: #2a1a1a;
-      color: var(--accent-red);
-    }
-
-    .btn-stop {
-      border-color: var(--border-subtle);
-      background-color: #0c0c0c;
-    }
+    .btn-reset { border-color: #2a1a1a; color: var(--accent-red); }
 
     .btn-stop .fill-overlay {
       position: absolute;
@@ -589,16 +407,10 @@
       transition: width 0.05s linear;
     }
 
-    .btn-stop .btn-text {
-      position: relative;
-      z-index: 2;
-    }
+    .btn-stop .btn-text { position: relative; z-index: 2; }
   </style>
 </head>
 <body>
-
-  <!-- Toast Notification Overlay -->
-  <div id="toast" class="toast-notification">Ride Saved</div>
 
   <!-- Header -->
   <div class="header">
@@ -608,189 +420,120 @@
         <div id="statusDot" class="status-dot"></div>
         <span id="statusText">READY</span>
       </div>
-      <button class="menu-btn" onclick="toggleMenu()">☰</button>
+      <button class="menu-btn" id="menuToggleBtn">☰</button>
     </div>
   </div>
 
-  <!-- Settings & Customization Modal -->
+  <!-- Settings Modal -->
   <div id="menuModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">MENU</div>
-        <button class="close-btn" onclick="toggleMenu()">✕</button>
+        <button class="close-btn" id="menuCloseBtn">✕</button>
       </div>
 
-      <!-- Menu Tabs Navigation -->
       <div class="menu-tabs">
-        <button id="tabBtnTiles" class="tab-btn active" onclick="switchTab('tiles')">TILES</button>
-        <button id="tabBtnHistory" class="tab-btn" onclick="switchTab('history')">HISTORY</button>
+        <button id="tabBtnTiles" class="tab-btn active">TILES</button>
+        <button id="tabBtnHistory" class="tab-btn">HISTORY</button>
       </div>
 
-      <!-- Tab 1: Tiles & Theme Settings -->
       <div id="tabContentTiles" class="tab-content active">
-        
-        <!-- Fixed Global Settings Block -->
         <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px;">
-          <!-- Theme Setting Row -->
           <div class="toggle-item">
             <span class="toggle-label">Color Scheme</span>
             <div class="unit-selector">
-              <button id="btnThemeDark" class="unit-opt active" onclick="setTheme('dark')">ORIGINAL</button>
-              <button id="btnThemeSun" class="unit-opt" onclick="setTheme('sun')">SUN HIGH-CONTRAST</button>
+              <button id="btnThemeDark" class="unit-opt active">ORIGINAL</button>
+              <button id="btnThemeSun" class="unit-opt">SUN HIGH-CONTRAST</button>
             </div>
           </div>
 
-          <!-- Speed Unit Setting Row -->
           <div class="toggle-item">
             <span class="toggle-label">Speed Units</span>
             <div class="unit-selector">
-              <button id="btnKm" class="unit-opt active" onclick="setUnits('metric')">KM/H</button>
-              <button id="btnMi" class="unit-opt" onclick="setUnits('imperial')">MPH</button>
+              <button id="btnKm" class="unit-opt active">KM/H</button>
+              <button id="btnMi" class="unit-opt">MPH</button>
             </div>
           </div>
         </div>
 
         <div class="toggle-list" id="reorderList">
           <div class="toggle-item" data-card="card-speed">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Current Speed</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-speed" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Current Speed</span>
+            <label class="switch"><input type="checkbox" id="chk-speed" checked><span class="slider"></span></label>
           </div>
-
           <div class="toggle-item" data-card="card-dist">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Distance</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-dist" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Distance</span>
+            <label class="switch"><input type="checkbox" id="chk-dist" checked><span class="slider"></span></label>
           </div>
-
           <div class="toggle-item" data-card="card-avg">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Average Speed</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-avg" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Average Speed</span>
+            <label class="switch"><input type="checkbox" id="chk-avg" checked><span class="slider"></span></label>
           </div>
-
           <div class="toggle-item" data-card="card-max">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Max Speed</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-max" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Max Speed</span>
+            <label class="switch"><input type="checkbox" id="chk-max" checked><span class="slider"></span></label>
           </div>
-
           <div class="toggle-item" data-card="card-grade">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Inclination Grade (%)</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-grade" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Inclination Grade (%)</span>
+            <label class="switch"><input type="checkbox" id="chk-grade" checked><span class="slider"></span></label>
           </div>
-
           <div class="toggle-item" data-card="card-ele">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Elevation Gain</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-ele" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Elevation Gain</span>
+            <label class="switch"><input type="checkbox" id="chk-ele" checked><span class="slider"></span></label>
           </div>
-
           <div class="toggle-item" data-card="card-alt">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Current Altitude</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-alt" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Current Altitude</span>
+            <label class="switch"><input type="checkbox" id="chk-alt" checked><span class="slider"></span></label>
           </div>
-
           <div class="toggle-item" data-card="card-time">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Elapsed Time</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-time" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">Elapsed Time</span>
+            <label class="switch"><input type="checkbox" id="chk-time" checked><span class="slider"></span></label>
           </div>
-
-          <div class="toggle-item" data-card="card-chart">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">Elevation Profile</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-chart" onchange="updateLayout()"><span class="slider"></span></label>
-          </div>
-
           <div class="toggle-item" data-card="card-map">
-            <div class="toggle-left">
-              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-              <span class="toggle-label">GPS Map View</span>
-            </div>
-            <label class="switch"><input type="checkbox" id="chk-map" checked onchange="updateLayout()"><span class="slider"></span></label>
+            <span class="toggle-label">GPS Map View</span>
+            <label class="switch"><input type="checkbox" id="chk-map" checked><span class="slider"></span></label>
           </div>
-
         </div>
       </div>
 
-      <!-- Tab 2: History -->
       <div id="tabContentHistory" class="tab-content">
         <div id="historyContainer" style="display: flex; flex-direction: column; gap: 6px;"></div>
       </div>
-
     </div>
   </div>
 
   <!-- Dashboard Container -->
   <div class="dashboard-container" id="dashboard">
-    
     <div id="card-speed" class="card primary-metric">
       <div class="metric-label">Current Speed</div>
       <div id="speedVal" class="speed-value">0.0</div>
       <div id="unitLabel" class="unit-label">KM/H</div>
     </div>
 
-    <!-- 3-Column Stats Grid -->
     <div id="row-stats" class="grid-row grid-3">
       <div id="card-dist" class="card sub-metric">
         <div class="metric-label">Distance</div>
         <div id="distVal" class="sub-value">0.00 <span>km</span></div>
       </div>
-
       <div id="card-avg" class="card sub-metric">
         <div class="metric-label">Avg Speed</div>
         <div id="avgSpeedVal" class="sub-value">0.0 <span>km/h</span></div>
       </div>
-
       <div id="card-max" class="card sub-metric">
         <div class="metric-label">Max Speed</div>
         <div id="maxSpeedVal" class="sub-value">0.0 <span>km/h</span></div>
       </div>
     </div>
 
-    <!-- 3-Column Elevation Grid -->
     <div id="row-elevation" class="grid-row grid-3">
       <div id="card-grade" class="card sub-metric">
         <div class="metric-label">Grade</div>
         <div id="gradeVal" class="sub-value">0.0 <span>%</span></div>
       </div>
-
       <div id="card-ele" class="card sub-metric">
         <div class="metric-label">Elevation</div>
         <div id="eleGainVal" class="sub-value">0 <span>m</span></div>
       </div>
-
       <div id="card-alt" class="card sub-metric">
         <div class="metric-label">Altitude</div>
         <div id="altVal" class="sub-value">-- <span>m</span></div>
@@ -802,157 +545,68 @@
       <div id="timerVal" class="time-display">00:00:00</div>
     </div>
 
-    <div id="card-chart" class="card hidden">
-      <div class="metric-label" style="margin-bottom: 4px;">Elevation Profile</div>
-      <canvas id="eleCanvas" class="canvas-box"></canvas>
-    </div>
-
     <div id="card-map" class="card">
       <div id="map"></div>
     </div>
-
   </div>
 
   <!-- Bottom Control Dock -->
   <div class="controls-grid">
-    <button id="startBtn" class="btn" onclick="startRide()">START</button>
-    <button id="pauseBtn" class="btn" onclick="pauseRide()">PAUSE</button>
-    
+    <button id="startBtn" class="btn">START</button>
+    <button id="pauseBtn" class="btn">PAUSE</button>
     <button id="stopBtn" class="btn btn-stop">
       <div id="stopFill" class="fill-overlay"></div>
       <span class="btn-text">STOP</span>
     </button>
-
-    <button id="resetBtn" class="btn btn-reset" onclick="resetRide()">RESET</button>
+    <button id="resetBtn" class="btn btn-reset">RESET</button>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then((reg) => {
         reg.update();
-        document.getElementById('statusText').innerText = 'OFFLINE READY';
       }).catch(() => {});
     }
 
     let isMetric = true;
     let currentTheme = 'dark';
     let isMapTileEnabled = true;
+    let rideState = 'STOPPED';
+    let map = null;
+    let stopHoldProgress = 0, stopInterval = null;
 
-    let rideState = 'STOPPED'; 
-    let isManualStopped = false;
-    let watchId = null;
-    let wakeLock = null;
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('menuToggleBtn').onclick = () => document.getElementById('menuModal').classList.add('active');
+      document.getElementById('menuCloseBtn').onclick = () => document.getElementById('menuModal').classList.remove('active');
+      
+      document.getElementById('btnThemeDark').onclick = () => setTheme('dark');
+      document.getElementById('btnThemeSun').onclick = () => setTheme('sun');
+      
+      document.getElementById('btnKm').onclick = () => setUnits('metric');
+      document.getElementById('btnMi').onclick = () => setUnits('imperial');
 
-    let startTime = 0;
-    let elapsedTime = 0;
-    let movingTimeSecs = 0;
-    let timerInterval = null;
+      document.getElementById('startBtn').onclick = startRide;
+      document.getElementById('pauseBtn').onclick = pauseRide;
+      document.getElementById('resetBtn').onclick = resetRide;
 
-    let totalDistanceMeters = 0;
-    let maxSpeedMps = 0;
-    let totalEleGain = 0;
-    let currentGrade = 0;
-    let lastPosition = null;
+      const switches = document.querySelectorAll('#reorderList input[type="checkbox"]');
+      switches.forEach(sw => sw.onchange = updateLayout);
 
-    let zeroSpeedCount = 0;
-    let eleHistory = [];
-    let gpxTrackPoints = [];
-    let rideHistory = [];
-    let map, routePolyline, userMarker;
-
-    let stopHoldProgress = 0;
-    let stopInterval = null;
-
-    window.onload = () => {
-      loadThemePreference();
-      loadLayoutPreferences();
-      loadRideHistory();
+      initMap();
       setupHoldToStop();
-    };
+      updateLayout();
+    });
 
     function setTheme(mode) {
       currentTheme = mode;
-      localStorage.setItem('horo_theme_pref', mode);
-
-      const btnDark = document.getElementById('btnThemeDark');
-      const btnSun = document.getElementById('btnThemeSun');
-
       if (mode === 'sun') {
         document.body.classList.add('theme-sun');
-        if (btnDark) btnDark.classList.remove('active');
-        if (btnSun) btnSun.classList.add('active');
-        if (routePolyline) routePolyline.setStyle({ color: '#00ff66' });
-        if (userMarker) userMarker.setStyle({ color: '#00ff66', fillColor: '#00ff66' });
+        document.getElementById('btnThemeDark').classList.remove('active');
+        document.getElementById('btnThemeSun').classList.add('active');
       } else {
         document.body.classList.remove('theme-sun');
-        if (btnSun) btnSun.classList.remove('active');
-        if (btnDark) btnDark.classList.add('active');
-        if (routePolyline) routePolyline.setStyle({ color: '#30d158' });
-        if (userMarker) userMarker.setStyle({ color: '#30d158', fillColor: '#30d158' });
-      }
-    }
-
-    function loadThemePreference() {
-      const savedTheme = localStorage.getItem('horo_theme_pref') || 'dark';
-      setTheme(savedTheme);
-    }
-
-    /* Dynamic Leaflet Map Lifecycle Management */
-    function initMap() {
-      if (typeof L === 'undefined' || map) return;
-      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
-      
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-        maxZoom: 19,
-        crossOrigin: true
-      }).addTo(map);
-
-      const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
-      routePolyline = L.polyline([], { color: trackColor, weight: 4 }).addTo(map);
-
-      if (gpxTrackPoints.length > 0) {
-        const points = gpxTrackPoints.map(p => [p.lat, p.lon]);
-        routePolyline.setLatLngs(points);
-        const lastPt = gpxTrackPoints[gpxTrackPoints.length - 1];
-        userMarker = L.circleMarker([lastPt.lat, lastPt.lon], { radius: 6, color: trackColor, fillColor: trackColor, fillOpacity: 1 }).addTo(map);
-        map.setView([lastPt.lat, lastPt.lon], 16);
-      }
-
-      setTimeout(() => {
-        if (map) map.invalidateSize();
-      }, 200);
-    }
-
-    function destroyMap() {
-      if (map) {
-        map.remove();
-        map = null;
-        routePolyline = null;
-        userMarker = null;
-      }
-    }
-
-    function toggleMenu() {
-      document.getElementById('menuModal').classList.toggle('active');
-    }
-
-    function switchTab(tabName) {
-      const btnTiles = document.getElementById('tabBtnTiles');
-      const btnHistory = document.getElementById('tabBtnHistory');
-      const contentTiles = document.getElementById('tabContentTiles');
-      const contentHistory = document.getElementById('tabContentHistory');
-
-      if (tabName === 'tiles') {
-        btnTiles.classList.add('active');
-        btnHistory.classList.remove('active');
-        contentTiles.classList.add('active');
-        contentHistory.classList.remove('active');
-      } else {
-        btnHistory.classList.add('active');
-        btnTiles.classList.remove('active');
-        contentHistory.classList.add('active');
-        contentTiles.classList.remove('active');
-        renderRideHistory();
+        document.getElementById('btnThemeSun').classList.remove('active');
+        document.getElementById('btnThemeDark').classList.add('active');
       }
     }
 
@@ -961,104 +615,40 @@
       document.getElementById('btnKm').classList.toggle('active', isMetric);
       document.getElementById('btnMi').classList.toggle('active', !isMetric);
       document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
-      if (lastPosition) updateDisplay(lastPosition);
-    }
-
-    function moveTileUp(btn) {
-      const item = btn.closest('.toggle-item');
-      if (item.previousElementSibling && item.previousElementSibling.dataset.card) {
-        item.parentNode.insertBefore(item, item.previousElementSibling);
-        updateLayout();
-      }
-    }
-
-    function moveTileDown(btn) {
-      const item = btn.closest('.toggle-item');
-      if (item.nextElementSibling) {
-        item.parentNode.insertBefore(item.nextElementSibling, item);
-        updateLayout();
-      }
     }
 
     function updateLayout() {
       const toggleItems = document.querySelectorAll('#reorderList .toggle-item[data-card]');
-      const visibilityPrefs = {};
-      
       toggleItems.forEach(item => {
         const cardId = item.dataset.card;
         const cardEl = document.getElementById(cardId);
         const checkbox = item.querySelector('input[type="checkbox"]');
-        
         if (cardEl && checkbox) {
-          visibilityPrefs[cardId] = checkbox.checked;
           if (checkbox.checked) cardEl.classList.remove('hidden');
           else cardEl.classList.add('hidden');
         }
       });
 
-      localStorage.setItem('horo_card_visibility_prefs', JSON.stringify(visibilityPrefs));
-
       const mapChk = document.getElementById('chk-map');
       isMapTileEnabled = mapChk ? mapChk.checked : true;
 
-      // Toggle dynamic map body state to expand Speed Tile when map is off
       if (isMapTileEnabled) {
         document.body.classList.remove('map-disabled');
-        initMap();
       } else {
         document.body.classList.add('map-disabled');
-        destroyMap();
       }
-
-      const statsRow = document.getElementById('row-stats');
-      const visibleStats = [
-        document.getElementById('chk-dist').checked,
-        document.getElementById('chk-avg').checked,
-        document.getElementById('chk-max').checked
-      ].filter(Boolean).length;
-      statsRow.className = `grid-row grid-${visibleStats || 1}`;
-      if (visibleStats === 0) statsRow.classList.add('hidden');
-      else statsRow.classList.remove('hidden');
-
-      const eleRow = document.getElementById('row-elevation');
-      const visibleEle = [
-        document.getElementById('chk-grade').checked,
-        document.getElementById('chk-ele').checked,
-        document.getElementById('chk-alt').checked
-      ].filter(Boolean).length;
-      eleRow.className = `grid-row grid-${visibleEle || 1}`;
-      if (visibleEle === 0) eleRow.classList.add('hidden');
-      else eleRow.classList.remove('hidden');
 
       if (map && isMapTileEnabled) {
         setTimeout(() => map.invalidateSize(), 150);
       }
     }
 
-    function loadLayoutPreferences() {
-      const savedPrefs = localStorage.getItem('horo_card_visibility_prefs');
-      if (savedPrefs) {
-        const visibilityPrefs = JSON.parse(savedPrefs);
-        Object.keys(visibilityPrefs).forEach(cardId => {
-          const toggleItem = document.querySelector(`.toggle-item[data-card="${cardId}"]`);
-          if (toggleItem) {
-            const checkbox = toggleItem.querySelector('input[type="checkbox"]');
-            if (checkbox) checkbox.checked = visibilityPrefs[cardId];
-          }
-        });
-      }
-      updateLayout();
+    function initMap() {
+      if (typeof L === 'undefined' || map) return;
+      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     }
 
-    function showSavedToast() {
-      const toast = document.getElementById('toast');
-      toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
-    }
-
-    /* Hold to Stop Implementation */
     function setupHoldToStop() {
       const stopBtn = document.getElementById('stopBtn');
       const fillOverlay = document.getElementById('stopFill');
@@ -1067,12 +657,9 @@
         e.preventDefault();
         stopHoldProgress = 0;
         fillOverlay.style.width = '0%';
-
         stopInterval = setInterval(() => {
           stopHoldProgress += 50;
-          const percentage = Math.min((stopHoldProgress / 2000) * 100, 100);
-          fillOverlay.style.width = `${percentage}%`;
-
+          fillOverlay.style.width = `${Math.min((stopHoldProgress / 2000) * 100, 100)}%`;
           if (stopHoldProgress >= 2000) {
             clearInterval(stopInterval);
             fillOverlay.style.width = '0%';
@@ -1089,59 +676,22 @@
 
       stopBtn.addEventListener('mousedown', startHold);
       stopBtn.addEventListener('mouseup', cancelHold);
-      stopBtn.addEventListener('mouseleave', cancelHold);
-
       stopBtn.addEventListener('touchstart', startHold, { passive: false });
       stopBtn.addEventListener('touchend', cancelHold);
-      stopBtn.addEventListener('touchcancel', cancelHold);
     }
-
-    async function requestWakeLock() {
-      try {
-        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-      } catch (err) {}
-    }
-
-    document.addEventListener('visibilitychange', async () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock();
-    });
 
     function startRide() {
       if (rideState === 'RUNNING') return;
-
       rideState = 'RUNNING';
-      isManualStopped = false;
-      requestWakeLock();
-
       document.getElementById('startBtn').classList.add('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.add('active');
       document.getElementById('statusText').innerText = 'RECORDING';
-
-      startTime = Date.now() - elapsedTime;
-      if (!timerInterval) {
-        timerInterval = setInterval(updateTimer, 1000);
-      }
-
-      if (navigator.geolocation) {
-        watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        });
-      }
     }
 
     function pauseRide() {
-      if (rideState !== 'RUNNING' && rideState !== 'AUTO-PAUSED') return;
-
+      if (rideState !== 'RUNNING') return;
       rideState = 'PAUSED';
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.add('active-pause');
       document.getElementById('statusDot').classList.remove('active');
@@ -1149,146 +699,18 @@
     }
 
     function executeStopRide() {
-      if (rideState === 'STOPPED') return;
-
       rideState = 'STOPPED';
-      isManualStopped = true;
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.remove('active');
       document.getElementById('statusText').innerText = 'STOPPED';
-
-      if (gpxTrackPoints.length > 2) {
-        saveRideToHistory();
-        showSavedToast();
-      }
     }
 
     function resetRide() {
-      if (confirm("Reset all ride data and start fresh?")) {
-        rideState = 'STOPPED';
-        isManualStopped = false;
-        if (timerInterval) {
-          clearInterval(timerInterval);
-          timerInterval = null;
-        }
-        if (watchId) navigator.geolocation.clearWatch(watchId);
-
-        elapsedTime = 0;
-        movingTimeSecs = 0;
-        totalDistanceMeters = 0;
-        maxSpeedMps = 0;
-        totalEleGain = 0;
-        currentGrade = 0;
-        lastPosition = null;
-        eleHistory = [];
-        gpxTrackPoints = [];
-
-        document.getElementById('startBtn').classList.remove('active-start');
-        document.getElementById('pauseBtn').classList.remove('active-pause');
-        document.getElementById('statusDot').classList.remove('active');
-        document.getElementById('statusText').innerText = 'READY';
-
-        document.getElementById('timerVal').innerText = "00:00:00";
-        document.getElementById('speedVal').innerText = "0.0";
-        document.getElementById('distVal').innerHTML = `0.00 <span>${isMetric ? 'km' : 'mi'}</span>`;
-        document.getElementById('avgSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-        document.getElementById('maxSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-        document.getElementById('gradeVal').innerHTML = `0.0 <span>%</span>`;
-        document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
-        document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
-
-        if (routePolyline) routePolyline.setLatLngs([]);
-      }
+      executeStopRide();
+      document.getElementById('speedVal').innerText = "0.0";
+      document.getElementById('statusText').innerText = 'READY';
     }
-
-    function handlePosition(pos) {
-      if (isManualStopped) return;
-
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const alt = pos.coords.altitude || 0;
-      const rawSpeed = pos.coords.speed || 0;
-      const accuracy = pos.coords.accuracy || 0;
-      const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
-
-      if (accuracy > 50) return;
-
-      const latLng = [lat, lon];
-
-      if (isMapTileEnabled && map) {
-        const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
-        if (!userMarker) {
-          userMarker = L.circleMarker(latLng, { radius: 6, color: trackColor, fillColor: trackColor, fillOpacity: 1 }).addTo(map);
-          map.setView(latLng, 16);
-          map.invalidateSize();
-        } else {
-          userMarker.setLatLng(latLng);
-          map.panTo(latLng);
-        }
-      }
-
-      const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
-
-      if (filteredSpeed === 0) {
-        zeroSpeedCount++;
-        if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
-          rideState = 'AUTO-PAUSED';
-          
-          if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-          }
-
-          document.getElementById('statusText').innerText = 'AUTO-PAUSED';
-          document.getElementById('statusDot').classList.remove('active');
-          document.getElementById('startBtn').classList.remove('active-start');
-          document.getElementById('pauseBtn').classList.add('active-pause');
-        }
-      } else {
-        zeroSpeedCount = 0;
-        if (rideState === 'AUTO-PAUSED' && !isManualStopped) {
-          rideState = 'RUNNING';
-
-          startTime = Date.now() - elapsedTime;
-          if (!timerInterval) {
-            timerInterval = setInterval(updateTimer, 1000);
-          }
-
-          document.getElementById('statusText').innerText = 'RECORDING';
-          document.getElementById('statusDot').classList.add('active');
-          document.getElementById('pauseBtn').classList.remove('active-pause');
-          document.getElementById('startBtn').classList.add('active-start');
-        }
-      }
-
-      if (rideState === 'RUNNING' && filteredSpeed > 0) {
-        movingTimeSecs++;
-
-        if (lastPosition) {
-          const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
-
-          if (d > 1.0) {
-            totalDistanceMeters += d;
-            if (isMapTileEnabled && routePolyline) routePolyline.addLatLng(latLng);
-
-            if (alt !== null && lastPosition.altitude !== null) {
-              const eleDiff = alt - lastPosition.altitude;
-              if (eleDiff > 2.0) totalEleGain += eleDiff;
-
-              currentGrade = (eleDiff / d) * 100;
-              if (Math.abs(currentGrade) > 35) currentGrade = 0;
-            }
-
-            gpxTrackPoints.push({
-              lat,
-              lon,
-              alt,
-              speed: filteredSpeed,
-              distance: totalDistanceMeters
+  </script>
+</body>
+</html>

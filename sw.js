@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v4-dynamic-tiles';
+const CACHE_NAME = 'horo-v6-button-fix';
 const ASSETS = [
   './',
   './index.html',
