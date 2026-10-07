@@ -17,8 +17,7 @@
   <style>
     :root {
       --bg-black: #000000;
-      --card-bg: #0c0c0c;
-      --card-border: #1a1a1a;
+      --card-bg: #000000;
       --text-white: #ffffff;
       --text-dim: #666666;
       --accent-green: #30d158;
@@ -106,7 +105,7 @@
       top: 20px;
       left: 50%;
       transform: translateX(-50%) translateY(-100px);
-      background: #181818;
+      background: #111111;
       border: 1px solid var(--accent-green);
       color: var(--accent-green);
       padding: 10px 20px;
@@ -129,7 +128,7 @@
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.92);
       backdrop-filter: blur(8px);
       z-index: 9999;
       display: none;
@@ -143,8 +142,8 @@
     }
 
     .modal-content {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+      background: var(--bg-black);
+      border: none;
       border-radius: 16px;
       width: 100%;
       max-width: 380px;
@@ -160,7 +159,7 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
-      border-bottom: 1px solid var(--card-border);
+      border-bottom: 1px solid #1a1a1a;
       padding-bottom: 10px;
     }
 
@@ -181,8 +180,8 @@
 
     .menu-tabs {
       display: flex;
-      background: #000;
-      border: 1px solid var(--card-border);
+      background: #0a0a0a;
+      border: none;
       border-radius: 8px;
       margin-bottom: 14px;
       overflow: hidden;
@@ -232,9 +231,9 @@
       align-items: center;
       justify-content: space-between;
       padding: 10px 12px;
-      background: #121212;
+      background: #0a0a0a;
       border-radius: 10px;
-      border: 1px solid #1f1f1f;
+      border: none;
       touch-action: pan-y;
     }
 
@@ -261,7 +260,7 @@
     .unit-selector {
       display: flex;
       background: #000;
-      border: 1px solid #222;
+      border: none;
       border-radius: 6px;
       overflow: hidden;
     }
@@ -324,8 +323,8 @@
     }
 
     .history-item {
-      background: #111;
-      border: 1px solid #222;
+      background: #0a0a0a;
+      border: none;
       border-radius: 10px;
       padding: 12px;
       display: flex;
@@ -351,8 +350,8 @@
     }
 
     .history-btn {
-      background: #222;
-      border: 1px solid #333;
+      background: #181818;
+      border: none;
       color: var(--text-white);
       padding: 6px 10px;
       font-size: 10px;
@@ -363,10 +362,9 @@
 
     .history-btn.gpx-btn {
       color: var(--accent-green);
-      border-color: rgba(48, 209, 88, 0.3);
     }
 
-    /* Dashboard Layout */
+    /* Borderless Pure Black Dashboard Layout */
     .dashboard-container {
       display: flex;
       flex-direction: column;
@@ -385,7 +383,7 @@
 
     .card {
       background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
+      border: none !important;
       border-radius: 14px;
       padding: 12px;
       width: 100%;
@@ -460,7 +458,7 @@
     .canvas-box {
       width: 100%;
       height: 120px;
-      background: #050505;
+      background: #000000;
       border-radius: 8px;
       display: block;
     }
@@ -483,8 +481,8 @@
 
     .btn {
       position: relative;
-      background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
+      background-color: #0c0c0c;
+      border: none;
       color: var(--text-white);
       padding: 14px 0;
       font-size: 11px;
@@ -494,7 +492,7 @@
       cursor: pointer;
       text-align: center;
       overflow: hidden;
-      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+      transition: background-color 0.15s, color 0.15s;
     }
 
     .btn:active {
@@ -502,24 +500,21 @@
     }
 
     .btn.active-start {
-      border-color: var(--accent-green) !important;
       color: var(--accent-green) !important;
       background-color: rgba(48, 209, 88, 0.1) !important;
     }
 
     .btn.active-pause {
-      border-color: var(--accent-orange) !important;
       color: var(--accent-orange) !important;
       background-color: rgba(255, 159, 10, 0.1) !important;
     }
 
     .btn.btn-reset {
-      border-color: #333;
       color: var(--accent-red);
     }
 
     .btn-stop {
-      border-color: #333;
+      background-color: #0c0c0c;
     }
 
     .btn-stop .fill-overlay {
@@ -1068,7 +1063,6 @@
       const accuracy = pos.coords.accuracy || 0;
       const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
 
-      /* 1. RELAXED ACCURACY FILTER (Threshold bumped to 50m to prevent data drops in weak signal zones) */
       if (accuracy > 50) return;
 
       const latLng = [lat, lon];
@@ -1086,7 +1080,6 @@
 
       const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
 
-      /* 2. SENSITIVE STATIONARY DETECTION (Requires only 2 consecutive zero-speed points) */
       if (filteredSpeed === 0) {
         zeroSpeedCount++;
         if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
@@ -1125,7 +1118,6 @@
         if (lastPosition) {
           const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
 
-          /* 3. LOWER DISTANCE FILTER (Threshold reduced to 1.0m to reliably capture slower rides/roll-outs) */
           if (d > 1.0) {
             totalDistanceMeters += d;
             if (routePolyline) routePolyline.addLatLng(latLng);
@@ -1228,7 +1220,7 @@
           </div>
           <div class="history-actions">
             <button class="history-btn gpx-btn" onclick="exportHistoryGPX(${ride.id})">GPX</button>
-            <button class="history-btn" style="color: var(--accent-red); border-color: rgba(255, 69, 58, 0.3);" onclick="deleteHistoryRide(${ride.id})">✕</button>
+            <button class="history-btn" style="color: var(--accent-red);" onclick="deleteHistoryRide(${ride.id})">✕</button>
           </div>
         `;
         container.appendChild(item);

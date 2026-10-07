@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-reliable-save-v1';
+const CACHE_NAME = 'horo-pure-black-v1';
 const ASSETS = [
   './',
   './index.html',
