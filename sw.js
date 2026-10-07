@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-grid-layout-v1';
+const CACHE_NAME = 'horo-autopause-savedtoast-v2';
 const ASSETS = [
   './',
   './index.html',
