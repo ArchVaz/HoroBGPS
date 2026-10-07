@@ -3,23 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>放浪 - GPS Bike Computer</title>
+  <title>放浪 Bike Computer</title>
   
+  <!-- PWA & iOS Settings -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="放浪">
+
+  <!-- Leaflet GIS Map Library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root {
       --bg-black: #000000;
       --card-bg: #0c0c0c;
-      --card-border: #1f1f1f;
+      --card-border: #1a1a1a;
       --text-white: #ffffff;
       --text-dim: #666666;
       --accent-green: #30d158;
       --accent-red: #ff453a;
       --accent-orange: #ff9f0a;
-      --accent-blue: #0a84ff;
     }
 
     * {
@@ -38,8 +42,7 @@
       display: flex;
       flex-direction: column;
       padding: 12px;
-      gap: 12px;
-      padding-bottom: 90px;
+      gap: 10px;
     }
 
     .header {
@@ -51,11 +54,11 @@
 
     .logo-text {
       font-size: 28px;
-      font-weight: 200;
-      letter-spacing: 4px;
+      font-weight: 300;
+      letter-spacing: 3px;
       color: var(--text-white);
       line-height: 1;
-      opacity: 0.95;
+      opacity: 0.9;
     }
 
     .header-actions {
@@ -96,12 +99,12 @@
       padding: 4px 8px;
     }
 
+    /* Modal Styling */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
       z-index: 9999;
       display: none;
       align-items: center;
@@ -116,27 +119,25 @@
     .modal-content {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 20px;
+      border-radius: 16px;
       width: 100%;
       max-width: 380px;
       max-height: 85vh;
       overflow-y: auto;
       padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 16px;
       border-bottom: 1px solid var(--card-border);
       padding-bottom: 12px;
     }
 
     .modal-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: 1.2px;
       color: var(--text-white);
@@ -150,13 +151,23 @@
       cursor: pointer;
     }
 
-    .settings-section-title {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-top: 4px;
+    .gpx-download-btn {
+      width: 100%;
+      background: #181818;
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .gpx-download-btn:active {
+      background: rgba(48, 209, 88, 0.15);
     }
 
     .toggle-list {
@@ -171,8 +182,30 @@
       justify-content: space-between;
       padding: 10px 12px;
       background: #121212;
-      border-radius: 12px;
-      border: 1px solid #1c1c1c;
+      border-radius: 10px;
+      border: 1px solid #1f1f1f;
+      touch-action: none;
+    }
+
+    .toggle-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .drag-handle {
+      color: var(--text-dim);
+      font-size: 14px;
+      cursor: grab;
+    }
+
+    .order-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 12px;
+      padding: 2px 4px;
+      cursor: pointer;
     }
 
     .toggle-label {
@@ -184,20 +217,18 @@
       display: flex;
       background: #000;
       border: 1px solid #222;
-      border-radius: 8px;
-      padding: 2px;
+      border-radius: 6px;
+      overflow: hidden;
     }
 
     .unit-opt {
-      padding: 6px 14px;
+      padding: 6px 12px;
       font-size: 11px;
       font-weight: 700;
       color: var(--text-dim);
       cursor: pointer;
       background: none;
       border: none;
-      border-radius: 6px;
-      transition: all 0.2s ease;
     }
 
     .unit-opt.active {
@@ -247,15 +278,17 @@
       transform: translateX(20px);
     }
 
+    /* Dashboard Reorderable Grid Container */
     .dashboard-container {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .grid-row {
       display: grid;
-      gap: 12px;
+      gap: 10px;
+      width: 100%;
     }
 
     .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
@@ -265,8 +298,9 @@
     .card {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 14px;
+      border-radius: 14px;
+      padding: 12px;
+      width: 100%;
     }
 
     .card.hidden {
@@ -275,7 +309,7 @@
 
     .primary-metric {
       text-align: center;
-      padding: 24px 12px;
+      padding: 18px 12px;
     }
 
     .metric-label {
@@ -288,31 +322,28 @@
     }
 
     .speed-value {
-      font-size: 88px;
+      font-size: 82px;
       font-weight: 800;
-      line-height: 0.95;
+      line-height: 1;
       letter-spacing: -3px;
-      font-variant-numeric: tabular-nums;
     }
 
     .unit-label {
       font-size: 13px;
       color: var(--text-dim);
-      font-weight: 700;
-      margin-top: 6px;
-      letter-spacing: 1px;
+      font-weight: 600;
+      margin-top: 4px;
     }
 
     .sub-metric {
       text-align: center;
-      padding: 12px 6px;
+      padding: 10px 4px;
     }
 
     .sub-value {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       margin-top: 2px;
-      font-variant-numeric: tabular-nums;
     }
 
     .sub-value span {
@@ -322,75 +353,85 @@
     }
 
     .time-display {
-      font-size: 38px;
+      font-size: 36px;
       font-weight: 800;
       letter-spacing: 1px;
       font-variant-numeric: tabular-nums;
       text-align: center;
     }
 
-    .canvas-box {
+    #map {
       width: 100%;
-      height: 180px;
-      background: #030303;
-      border-radius: 12px;
-      display: block;
-      border: 1px solid #141414;
+      height: 200px;
+      min-height: 200px;
+      border-radius: 10px;
+      background: #000000;
+      z-index: 1;
     }
 
-    /* Floating Dock at Screen Bottom */
-    .controls-dock {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+    .canvas-box {
+      width: 100%;
+      height: 120px;
+      background: #050505;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .leaflet-tile {
+      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+    }
+
+    /* 4-Button Bottom Control Dock */
+    .controls-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      width: calc(100% - 32px);
-      max-width: 380px;
-      z-index: 1000;
-      background: rgba(12, 12, 12, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      padding: 8px;
-      border-radius: 18px;
-      border: 1px solid var(--card-border);
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: auto;
+      max-width: 400px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .btn {
-      background-color: #141414;
-      border: 1px solid #222222;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
       color: var(--text-white);
       padding: 14px 0;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
-      letter-spacing: 1.2px;
-      border-radius: 12px;
+      letter-spacing: 1px;
+      border-radius: 10px;
       cursor: pointer;
       text-align: center;
-      transition: all 0.2s ease;
+      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
     }
 
     .btn:active {
-      transform: scale(0.97);
+      background-color: #1a1a1a;
     }
 
     .btn.active-start {
       border-color: var(--accent-green) !important;
       color: var(--accent-green) !important;
-      background-color: rgba(48, 209, 88, 0.12) !important;
+      background-color: rgba(48, 209, 88, 0.1) !important;
     }
 
     .btn.active-pause {
       border-color: var(--accent-orange) !important;
       color: var(--accent-orange) !important;
-      background-color: rgba(255, 159, 10, 0.12) !important;
+      background-color: rgba(255, 159, 10, 0.1) !important;
+    }
+
+    .btn.btn-reset {
+      border-color: #333;
+      color: var(--accent-red);
     }
   </style>
 </head>
 <body>
 
+  <!-- Header -->
   <div class="header">
     <div class="logo-text">放浪</div>
     <div class="header-actions">
@@ -398,69 +439,91 @@
         <div id="statusDot" class="status-dot"></div>
         <span id="statusText">READY</span>
       </div>
-      <button class="menu-btn" onclick="toggleMenu()" aria-label="Settings">☰</button>
+      <button class="menu-btn" onclick="toggleMenu()">☰</button>
     </div>
   </div>
 
+  <!-- Settings & Customization Modal -->
   <div id="menuModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
-        <div class="modal-title">CUSTOMIZE DASHBOARD</div>
+        <div class="modal-title">MENU</div>
         <button class="close-btn" onclick="toggleMenu()">✕</button>
       </div>
 
-      <div class="settings-section-title">Units & Preferences</div>
-      <div class="toggle-item">
-        <span class="toggle-label">Measurement Unit</span>
-        <div class="unit-selector">
-          <button id="btnKm" class="unit-opt active" onclick="setUnits('metric')">KM/H</button>
-          <button id="btnMi" class="unit-opt" onclick="setUnits('imperial')">MPH</button>
-        </div>
-      </div>
+      <button class="gpx-download-btn" onclick="downloadGPX()">EXPORT RIDE (GPX)</button>
 
-      <div class="settings-section-title">Displayed Metrics</div>
-      <div class="toggle-list">
-        <div class="toggle-item">
-          <span class="toggle-label">Current Speed</span>
+      <div class="toggle-list" id="reorderList">
+        
+        <div class="toggle-item" data-id="unit-setting">
+          <span class="toggle-label">Speed Units</span>
+          <div class="unit-selector">
+            <button id="btnKm" class="unit-opt active" onclick="setUnits('metric')">KM/H</button>
+            <button id="btnMi" class="unit-opt" onclick="setUnits('imperial')">MPH</button>
+          </div>
+        </div>
+
+        <div class="toggle-item" data-card="card-speed">
+          <div class="toggle-left">
+            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+            <span class="toggle-label">Speed</span>
+          </div>
           <label class="switch"><input type="checkbox" id="chk-speed" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Distance</span>
-          <label class="switch"><input type="checkbox" id="chk-dist" checked onchange="updateLayout()"><span class="slider"></span></label>
+
+        <div class="toggle-item" data-card="row-stats">
+          <div class="toggle-left">
+            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+            <span class="toggle-label">Distance / Avg / Max</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="chk-stats" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Average Speed</span>
-          <label class="switch"><input type="checkbox" id="chk-avg" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Max Speed</span>
-          <label class="switch"><input type="checkbox" id="chk-max" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Elevation Gain</span>
+
+        <div class="toggle-item" data-card="row-elevation">
+          <div class="toggle-left">
+            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+            <span class="toggle-label">Elevation / Altitude</span>
+          </div>
           <label class="switch"><input type="checkbox" id="chk-ele" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Current Altitude</span>
-          <label class="switch"><input type="checkbox" id="chk-alt" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Elapsed Time</span>
+
+        <div class="toggle-item" data-card="card-time">
+          <div class="toggle-left">
+            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+            <span class="toggle-label">Elapsed Time</span>
+          </div>
           <label class="switch"><input type="checkbox" id="chk-time" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Elevation Profile Chart</span>
-          <label class="switch"><input type="checkbox" id="chk-chart" checked onchange="updateLayout()"><span class="slider"></span></label>
+
+        <div class="toggle-item" data-card="card-chart">
+          <div class="toggle-left">
+            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+            <span class="toggle-label">Elevation Profile</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="chk-chart" onchange="updateLayout()"><span class="slider"></span></label>
         </div>
-        <div class="toggle-item">
-          <span class="toggle-label">Offline GPS Map Plot</span>
+
+        <div class="toggle-item" data-card="card-map">
+          <div class="toggle-left">
+            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+            <span class="toggle-label">GPS Map View</span>
+          </div>
           <label class="switch"><input type="checkbox" id="chk-map" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
+
       </div>
     </div>
   </div>
 
-  <div class="dashboard-container">
+  <!-- Reorderable Dashboard Container -->
+  <div class="dashboard-container" id="dashboard">
+    
     <div id="card-speed" class="card primary-metric">
       <div class="metric-label">Current Speed</div>
       <div id="speedVal" class="speed-value">0.0</div>
@@ -498,21 +561,23 @@
       <div id="timerVal" class="time-display">00:00:00</div>
     </div>
 
-    <div id="card-chart" class="card">
+    <div id="card-chart" class="card hidden">
       <div class="metric-label" style="margin-bottom: 8px;">Elevation Profile</div>
       <canvas id="eleCanvas" class="canvas-box"></canvas>
     </div>
 
-    <div id="card-map" class="card">
-      <div class="metric-label" style="margin-bottom: 8px;">GPS Offline Canvas Map</div>
-      <canvas id="mapCanvas" class="canvas-box"></canvas>
+    <div id="card-map" class="card" style="padding: 4px;">
+      <div id="map"></div>
     </div>
+
   </div>
 
-  <div class="controls-dock">
+  <!-- 4-Button Controls Grid (Far Right RESET Button) -->
+  <div class="controls-grid">
     <button id="startBtn" class="btn" onclick="startRide()">START</button>
     <button id="pauseBtn" class="btn" onclick="pauseRide()">PAUSE</button>
     <button id="stopBtn" class="btn" onclick="stopRide()">STOP</button>
+    <button id="resetBtn" class="btn btn-reset" onclick="resetRide()">RESET</button>
   </div>
 
   <script>
@@ -537,35 +602,29 @@
     let totalEleGain = 0;
     let lastPosition = null;
 
-    // GPS Breadcrumbs & Elevation log
-    let gpsPath = []; // [{lat, lon, alt}]
-    let eleHistory = []; // [altitudeMeters]
+    let eleHistory = [];
+    let gpxTrackPoints = [];
+    let map, routePolyline, userMarker;
 
     window.onload = () => {
-      loadPreferences();
-      resizeCanvases();
-      drawMapCanvas();
-      drawElevationCanvas();
-      window.addEventListener('resize', () => {
-        resizeCanvases();
-        drawMapCanvas();
-        drawElevationCanvas();
-      });
+      loadLayoutPreferences();
+      initMap();
     };
 
-    function resizeCanvases() {
-      const mapCanvas = document.getElementById('mapCanvas');
-      const eleCanvas = document.getElementById('eleCanvas');
+    function initMap() {
+      if (typeof L === 'undefined') return;
+      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
+      
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        maxZoom: 19,
+        crossOrigin: true
+      }).addTo(map);
 
-      if (mapCanvas) {
-        mapCanvas.width = mapCanvas.clientWidth * window.devicePixelRatio || mapCanvas.clientWidth;
-        mapCanvas.height = mapCanvas.clientHeight * window.devicePixelRatio || mapCanvas.clientHeight;
-      }
+      routePolyline = L.polyline([], { color: '#30d158', weight: 4 }).addTo(map);
 
-      if (eleCanvas) {
-        eleCanvas.width = eleCanvas.clientWidth * window.devicePixelRatio || eleCanvas.clientWidth;
-        eleCanvas.height = eleCanvas.clientHeight * window.devicePixelRatio || eleCanvas.clientHeight;
-      }
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 500);
     }
 
     function toggleMenu() {
@@ -577,105 +636,60 @@
       document.getElementById('btnKm').classList.toggle('active', isMetric);
       document.getElementById('btnMi').classList.toggle('active', !isMetric);
       document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
-      
-      savePreferences();
       if (lastPosition) updateDisplay(lastPosition);
-      else updateDisplayDefaults();
+    }
+
+    function moveTileUp(btn) {
+      const item = btn.closest('.toggle-item');
+      if (item.previousElementSibling && item.previousElementSibling.dataset.card) {
+        item.parentNode.insertBefore(item, item.previousElementSibling);
+        updateLayout();
+      }
+    }
+
+    function moveTileDown(btn) {
+      const item = btn.closest('.toggle-item');
+      if (item.nextElementSibling) {
+        item.parentNode.insertBefore(item.nextElementSibling, item);
+        updateLayout();
+      }
     }
 
     function updateLayout() {
-      const prefs = {
-        metric: isMetric,
-        speed: document.getElementById('chk-speed').checked,
-        dist: document.getElementById('chk-dist').checked,
-        avg: document.getElementById('chk-avg').checked,
-        max: document.getElementById('chk-max').checked,
-        ele: document.getElementById('chk-ele').checked,
-        alt: document.getElementById('chk-alt').checked,
-        time: document.getElementById('chk-time').checked,
-        chart: document.getElementById('chk-chart').checked,
-        map: document.getElementById('chk-map').checked
-      };
+      const dashboard = document.getElementById('dashboard');
+      const toggleItems = document.querySelectorAll('#reorderList .toggle-item[data-card]');
+      const cardOrder = [];
 
-      savePreferences(prefs);
-      applyLayout(prefs);
+      toggleItems.forEach(item => {
+        const cardId = item.dataset.card;
+        cardOrder.push(cardId);
+        
+        const cardEl = document.getElementById(cardId);
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        
+        if (cardEl && checkbox) {
+          if (checkbox.checked) cardEl.classList.remove('hidden');
+          else cardEl.classList.add('hidden');
+          dashboard.appendChild(cardEl);
+        }
+      });
+
+      localStorage.setItem('horo_card_order', JSON.stringify(cardOrder));
+      if (map) setTimeout(() => map.invalidateSize(), 200);
     }
 
-    function savePreferences(customPrefs) {
-      const prefs = customPrefs || {
-        metric: isMetric,
-        speed: document.getElementById('chk-speed').checked,
-        dist: document.getElementById('chk-dist').checked,
-        avg: document.getElementById('chk-avg').checked,
-        max: document.getElementById('chk-max').checked,
-        ele: document.getElementById('chk-ele').checked,
-        alt: document.getElementById('chk-alt').checked,
-        time: document.getElementById('chk-time').checked,
-        chart: document.getElementById('chk-chart').checked,
-        map: document.getElementById('chk-map').checked
-      };
-      localStorage.setItem('horo_pwa_prefs', JSON.stringify(prefs));
-    }
-
-    function loadPreferences() {
-      const saved = localStorage.getItem('horo_pwa_prefs');
-      const prefs = saved ? JSON.parse(saved) : {
-        metric: true, speed: true, dist: true, avg: true, max: true,
-        ele: true, alt: true, time: true, chart: true, map: true
-      };
-
-      isMetric = prefs.metric !== false;
-      document.getElementById('btnKm').classList.toggle('active', isMetric);
-      document.getElementById('btnMi').classList.toggle('active', !isMetric);
-      document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
-
-      document.getElementById('chk-speed').checked = prefs.speed;
-      document.getElementById('chk-dist').checked = prefs.dist;
-      document.getElementById('chk-avg').checked = prefs.avg;
-      document.getElementById('chk-max').checked = prefs.max;
-      document.getElementById('chk-ele').checked = prefs.ele;
-      document.getElementById('chk-alt').checked = prefs.alt;
-      document.getElementById('chk-time').checked = prefs.time;
-      document.getElementById('chk-chart').checked = prefs.chart;
-      document.getElementById('chk-map').checked = prefs.map;
-
-      applyLayout(prefs);
-    }
-
-    function applyLayout(p) {
-      toggleCard('card-speed', p.speed);
-      toggleCard('card-dist', p.dist);
-      toggleCard('card-avg', p.avg);
-      toggleCard('card-max', p.max);
-      toggleCard('card-ele', p.ele);
-      toggleCard('card-alt', p.alt);
-      toggleCard('card-time', p.time);
-      toggleCard('card-chart', p.chart);
-      toggleCard('card-map', p.map);
-
-      const statsRow = document.getElementById('row-stats');
-      const visibleStats = [p.dist, p.avg, p.max].filter(Boolean).length;
-      statsRow.className = `grid-row grid-${visibleStats || 1}`;
-      if (visibleStats === 0) statsRow.classList.add('hidden');
-      else statsRow.classList.remove('hidden');
-
-      const eleRow = document.getElementById('row-elevation');
-      const visibleEle = [p.ele, p.alt].filter(Boolean).length;
-      eleRow.className = `grid-row grid-${visibleEle || 1}`;
-      if (visibleEle === 0) eleRow.classList.add('hidden');
-      else eleRow.classList.remove('hidden');
-
-      setTimeout(() => {
-        resizeCanvases();
-        drawMapCanvas();
-        drawElevationCanvas();
-      }, 50);
-    }
-
-    function toggleCard(id, visible) {
-      const el = document.getElementById(id);
-      if (visible) el.classList.remove('hidden');
-      else el.classList.add('hidden');
+    function loadLayoutPreferences() {
+      const savedOrder = localStorage.getItem('horo_card_order');
+      if (savedOrder) {
+        const cardOrder = JSON.parse(savedOrder);
+        const reorderList = document.getElementById('reorderList');
+        
+        cardOrder.forEach(cardId => {
+          const toggleItem = document.querySelector(`.toggle-item[data-card="${cardId}"]`);
+          if (toggleItem) reorderList.appendChild(toggleItem);
+        });
+      }
+      updateLayout();
     }
 
     async function requestWakeLock() {
@@ -724,6 +738,7 @@
       document.getElementById('statusText').innerText = 'PAUSED';
     }
 
+    // STOP pauses logging without erasing recorded data
     function stopRide() {
       rideState = 'STOPPED';
       clearInterval(timerInterval);
@@ -732,74 +747,83 @@
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.remove('active');
-      document.getElementById('statusText').innerText = 'OFFLINE READY';
-
-      elapsedTime = 0;
-      movingTimeSecs = 0;
-      totalDistanceMeters = 0;
-      maxSpeedMps = 0;
-      totalEleGain = 0;
-      lastPosition = null;
-      gpsPath = [];
-      eleHistory = [];
-
-      updateDisplayDefaults();
-      drawMapCanvas();
-      drawElevationCanvas();
+      document.getElementById('statusText').innerText = 'STOPPED';
     }
 
-    function updateDisplayDefaults() {
-      document.getElementById('timerVal').innerText = "00:00:00";
-      document.getElementById('speedVal').innerText = "0.0";
-      document.getElementById('distVal').innerHTML = `0.00 <span>${isMetric ? 'km' : 'mi'}</span>`;
-      document.getElementById('avgSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-      document.getElementById('maxSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-      document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
-      document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
+    // RESET Button clears all accumulated statistics for a fresh ride
+    function resetRide() {
+      if (confirm("Reset all ride data and start fresh?")) {
+        stopRide();
+
+        elapsedTime = 0;
+        movingTimeSecs = 0;
+        totalDistanceMeters = 0;
+        maxSpeedMps = 0;
+        totalEleGain = 0;
+        lastPosition = null;
+        eleHistory = [];
+        gpxTrackPoints = [];
+
+        document.getElementById('statusText').innerText = 'READY';
+        document.getElementById('timerVal').innerText = "00:00:00";
+        document.getElementById('speedVal').innerText = "0.0";
+        document.getElementById('distVal').innerHTML = `0.00 <span>${isMetric ? 'km' : 'mi'}</span>`;
+        document.getElementById('avgSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+        document.getElementById('maxSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+        document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
+        document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
+
+        if (routePolyline) routePolyline.setLatLngs([]);
+      }
     }
 
     function handlePosition(pos) {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
-      const alt = pos.coords.altitude;
+      const alt = pos.coords.altitude || 0;
       const rawSpeed = pos.coords.speed || 0;
       const accuracy = pos.coords.accuracy || 0;
+      const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
 
-      // Filter low accuracy GPS fixes (accuracy worse than 25m)
       if (accuracy > 25) return;
 
-      // Filter GPS drift noise when stationary
-      const filteredSpeed = rawSpeed < 0.4 ? 0 : rawSpeed;
+      const latLng = [lat, lon];
+
+      if (map) {
+        if (!userMarker) {
+          userMarker = L.circleMarker(latLng, { radius: 6, color: '#30d158', fillColor: '#30d158', fillOpacity: 1 }).addTo(map);
+          map.setView(latLng, 16);
+          map.invalidateSize();
+        } else {
+          userMarker.setLatLng(latLng);
+          map.panTo(latLng);
+        }
+      }
+
+      const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
       if (filteredSpeed > 0) movingTimeSecs++;
 
       if (lastPosition) {
         const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
 
-        // Minimum movement threshold (3 meters) to filter static GPS jitter
         if (d > 3.0 && filteredSpeed > 0) {
           totalDistanceMeters += d;
-          gpsPath.push({ lat, lon });
+          if (routePolyline) routePolyline.addLatLng(latLng);
+          gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, time: timestamp });
 
           if (alt !== null && lastPosition.altitude !== null) {
             const eleDiff = alt - lastPosition.altitude;
-            if (eleDiff > 1.8) totalEleGain += eleDiff;
+            if (eleDiff > 2.0) totalEleGain += eleDiff;
           }
         }
       } else {
-        gpsPath.push({ lat, lon });
-      }
-
-      if (alt !== null) {
-        eleHistory.push(alt);
-        if (eleHistory.length > 50) eleHistory.shift();
+        gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, time: timestamp });
       }
 
       if (filteredSpeed > maxSpeedMps) maxSpeedMps = filteredSpeed;
 
       lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: filteredSpeed };
       updateDisplay(lastPosition);
-      drawMapCanvas();
-      drawElevationCanvas();
     }
 
     function updateDisplay(pos) {
@@ -811,14 +835,14 @@
       const avgSpeed = isMetric ? (avgSpeedMps * 3.6) : (avgSpeedMps * 2.23694);
       
       const eleGain = isMetric ? totalEleGain : totalEleGain * 3.28084;
-      const altitude = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : null;
+      const altitude = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : '--';
 
       document.getElementById('speedVal').innerText = currSpeed.toFixed(1);
       document.getElementById('distVal').innerHTML = `${distance.toFixed(2)} <span>${isMetric ? 'km' : 'mi'}</span>`;
       document.getElementById('avgSpeedVal').innerHTML = `${avgSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
       document.getElementById('maxSpeedVal').innerHTML = `${maxSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
       document.getElementById('eleGainVal').innerHTML = `${Math.round(eleGain)} <span>${isMetric ? 'm' : 'ft'}</span>`;
-      document.getElementById('altVal').innerHTML = `${altitude !== null ? Math.round(altitude) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
+      document.getElementById('altVal').innerHTML = `${altitude !== '--' ? Math.round(altitude) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
     }
 
     function updateTimer() {
@@ -830,6 +854,45 @@
 
       document.getElementById('timerVal').innerText =
         `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function downloadGPX() {
+      if (gpxTrackPoints.length === 0) {
+        alert("No GPS route points recorded yet. Press START and record a ride first.");
+        return;
+      }
+
+      const dateToday = new Date().toISOString().split('T')[0];
+      const filename = `HoroGPS_${dateToday}.gpx`;
+
+      let gpxXml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      gpxXml += `<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+      gpxXml += `  <metadata>\n`;
+      gpxXml += `    <name>${filename}</name>\n`;
+      gpxXml += `    <time>${new Date().toISOString()}</time>\n`;
+      gpxXml += `  </metadata>\n`;
+      gpxXml += `  <trk>\n`;
+      gpxXml += `    <name>放浪 Ride - ${dateToday}</name>\n`;
+      gpxXml += `    <trkseg>\n`;
+
+      gpxTrackPoints.forEach(pt => {
+        gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}">\n`;
+        gpxXml += `        <ele>${pt.alt.toFixed(1)}</ele>\n`;
+        gpxXml += `        <time>${pt.time}</time>\n`;
+        gpxXml += `      </trkpt>\n`;
+      });
+
+      gpxXml += `    </trkseg>\n`;
+      gpxXml += `  </trk>\n`;
+      gpxXml += `</gpx>`;
+
+      const blob = new Blob([gpxXml], { type: 'application/gpx+xml' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function calcDistance(lat1, lon1, lat2, lon2) {
@@ -847,147 +910,6 @@
 
     function handleError(err) {
       document.getElementById('statusText').innerText = 'SEARCHING GPS';
-    }
-
-    function drawMapCanvas() {
-      const canvas = document.getElementById('mapCanvas');
-      if (!canvas || canvas.clientWidth === 0) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Draw subtle background grid pattern
-      ctx.strokeStyle = '#121212';
-      ctx.lineWidth = 1;
-      const gridSize = 30 * (window.devicePixelRatio || 1);
-      for (let x = 0; x < w; x += gridSize) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      }
-      for (let y = 0; y < h; y += gridSize) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
-
-      if (gpsPath.length === 0) {
-        ctx.fillStyle = '#444';
-        ctx.font = `${11 * (window.devicePixelRatio || 1)}px -apple-system, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText('WAITING FOR GPS ROUTE DATA...', w / 2, h / 2);
-        return;
-      }
-
-      // Calculate latitude / longitude bounds
-      let minLat = gpsPath[0].lat, maxLat = gpsPath[0].lat;
-      let minLon = gpsPath[0].lon, maxLon = gpsPath[0].lon;
-
-      gpsPath.forEach(pt => {
-        if (pt.lat < minLat) minLat = pt.lat;
-        if (pt.lat > maxLat) maxLat = pt.lat;
-        if (pt.lon < minLon) minLon = pt.lon;
-        if (pt.lon > maxLon) maxLon = pt.lon;
-      });
-
-      // Add dynamic padding to map bounds
-      const latRange = Math.max((maxLat - minLat), 0.0005);
-      const lonRange = Math.max((maxLon - minLon), 0.0005);
-      const padding = 40 * (window.devicePixelRatio || 1);
-
-      const toScreenX = (lon) => padding + ((lon - minLon) / lonRange) * (w - padding * 2);
-      const toScreenY = (lat) => h - (padding + ((lat - minLat) / latRange) * (h - padding * 2));
-
-      // Draw GPS breadcrumb polyline
-      ctx.beginPath();
-      ctx.strokeStyle = '#30d158';
-      ctx.lineWidth = 4 * (window.devicePixelRatio || 1);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      gpsPath.forEach((pt, idx) => {
-        const x = toScreenX(pt.lon);
-        const y = toScreenY(pt.lat);
-        if (idx === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-
-      // Draw start point marker
-      const startPt = gpsPath[0];
-      ctx.fillStyle = '#0a84ff';
-      ctx.beginPath();
-      ctx.arc(toScreenX(startPt.lon), toScreenY(startPt.lat), 6 * (window.devicePixelRatio || 1), 0, Math.PI * 2);
-      ctx.fill();
-
-      // Draw current position pulse dot
-      const currPt = gpsPath[gpsPath.length - 1];
-      const cx = toScreenX(currPt.lon);
-      const cy = toScreenY(currPt.lat);
-
-      ctx.fillStyle = 'rgba(48, 209, 88, 0.25)';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 14 * (window.devicePixelRatio || 1), 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6 * (window.devicePixelRatio || 1), 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function drawElevationCanvas() {
-      const canvas = document.getElementById('eleCanvas');
-      if (!canvas || canvas.clientWidth === 0) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-
-      ctx.clearRect(0, 0, w, h);
-
-      if (eleHistory.length < 2) {
-        ctx.fillStyle = '#444';
-        ctx.font = `${11 * (window.devicePixelRatio || 1)}px -apple-system, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText('RECORDING ELEVATION DATA...', w / 2, h / 2);
-        return;
-      }
-
-      let minAlt = Math.min(...eleHistory);
-      let maxAlt = Math.max(...eleHistory);
-      if (maxAlt === minAlt) {
-        maxAlt += 5;
-        minAlt -= 5;
-      }
-
-      const padding = 20 * (window.devicePixelRatio || 1);
-      const range = maxAlt - minAlt;
-
-      const getX = (i) => (i / (eleHistory.length - 1)) * (w - padding * 2) + padding;
-      const getY = (alt) => h - (padding + ((alt - minAlt) / range) * (h - padding * 2));
-
-      // Filled area under elevation chart
-      ctx.beginPath();
-      ctx.moveTo(getX(0), h - padding);
-      eleHistory.forEach((alt, i) => {
-        ctx.lineTo(getX(i), getY(alt));
-      });
-      ctx.lineTo(getX(eleHistory.length - 1), h - padding);
-      ctx.closePath();
-
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(48, 209, 88, 0.35)');
-      grad.addColorStop(1, 'rgba(48, 209, 88, 0.0)');
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Elevation top line
-      ctx.beginPath();
-      ctx.strokeStyle = '#30d158';
-      ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
-      eleHistory.forEach((alt, i) => {
-        if (i === 0) ctx.moveTo(getX(i), getY(alt));
-        else ctx.lineTo(getX(i), getY(alt));
-      });
-      ctx.stroke();
     }
   </script>
 </body>
