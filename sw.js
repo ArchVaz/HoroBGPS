@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v2-force-refresh';
+const CACHE_NAME = 'horo-v3-viewport-lock';
 const ASSETS = [
   './',
   './index.html',
