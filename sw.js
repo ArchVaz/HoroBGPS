@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v11-wakelock-fix';
+const CACHE_NAME = 'horo-v12-reset-confirm-toast-fix';
 const ASSETS = [
   './',
   './index.html',
