@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-grid-reorder-v1';
+const CACHE_NAME = 'horo-autopause-history-v1';
 const ASSETS = [
   './',
   './index.html',

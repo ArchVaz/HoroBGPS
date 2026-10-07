@@ -24,6 +24,7 @@
       --accent-green: #30d158;
       --accent-red: #ff453a;
       --accent-orange: #ff9f0a;
+      --accent-blue: #0a84ff;
     }
 
     * {
@@ -90,6 +91,11 @@
       box-shadow: 0 0 8px var(--accent-green);
     }
 
+    .status-dot.auto-paused {
+      background-color: var(--accent-orange);
+      box-shadow: 0 0 8px var(--accent-orange);
+    }
+
     .menu-btn {
       background: none;
       border: none;
@@ -103,13 +109,13 @@
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.88);
       backdrop-filter: blur(8px);
       z-index: 9999;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
     }
 
     .modal-overlay.active {
@@ -121,10 +127,10 @@
       border: 1px solid var(--card-border);
       border-radius: 16px;
       width: 100%;
-      max-width: 380px;
-      max-height: 85vh;
+      max-width: 400px;
+      max-height: 88vh;
       overflow-y: auto;
-      padding: 20px;
+      padding: 18px;
     }
 
     .modal-header {
@@ -151,6 +157,15 @@
       cursor: pointer;
     }
 
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      margin: 16px 0 8px 0;
+      text-transform: uppercase;
+    }
+
     .gpx-download-btn {
       width: 100%;
       background: #181818;
@@ -163,7 +178,7 @@
       letter-spacing: 1px;
       cursor: pointer;
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .gpx-download-btn:active {
@@ -191,12 +206,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-
-    .drag-handle {
-      color: var(--text-dim);
-      font-size: 14px;
-      cursor: grab;
     }
 
     .order-btn {
@@ -278,7 +287,69 @@
       transform: translateX(20px);
     }
 
-    /* Dashboard Reorderable Grid Container */
+    /* History List Styling */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .history-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-white);
+    }
+
+    .history-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .hist-btn {
+      background: #1c1c1e;
+      border: 1px solid #333;
+      color: var(--text-white);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .hist-btn.dl {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .hist-btn.del {
+      border-color: #442222;
+      color: var(--accent-red);
+    }
+
+    /* Dashboard Grid Container */
     .dashboard-container {
       display: flex;
       flex-direction: column;
@@ -369,19 +440,11 @@
       z-index: 1;
     }
 
-    .canvas-box {
-      width: 100%;
-      height: 120px;
-      background: #050505;
-      border-radius: 8px;
-      display: block;
-    }
-
     .leaflet-tile {
       filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
-    /* 4-Button Bottom Control Dock */
+    /* 4-Button Controls Grid */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -443,7 +506,7 @@
     </div>
   </div>
 
-  <!-- Settings & Customization Modal -->
+  <!-- Menu / Settings Modal -->
   <div id="menuModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -451,8 +514,14 @@
         <button class="close-btn" onclick="toggleMenu()">✕</button>
       </div>
 
-      <button class="gpx-download-btn" onclick="downloadGPX()">EXPORT RIDE (GPX)</button>
+      <button class="gpx-download-btn" onclick="downloadCurrentGPX()">EXPORT CURRENT RIDE (GPX)</button>
 
+      <div class="section-title">Ride History</div>
+      <div id="historyContainer" class="history-list">
+        <!-- History items rendered via JS -->
+      </div>
+
+      <div class="section-title">Dashboard Customization</div>
       <div class="toggle-list" id="reorderList">
         
         <div class="toggle-item" data-id="unit-setting">
@@ -497,15 +566,6 @@
             <span class="toggle-label">Elapsed Time</span>
           </div>
           <label class="switch"><input type="checkbox" id="chk-time" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-chart">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Elevation Profile</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-chart" onchange="updateLayout()"><span class="slider"></span></label>
         </div>
 
         <div class="toggle-item" data-card="card-map">
@@ -561,18 +621,13 @@
       <div id="timerVal" class="time-display">00:00:00</div>
     </div>
 
-    <div id="card-chart" class="card hidden">
-      <div class="metric-label" style="margin-bottom: 8px;">Elevation Profile</div>
-      <canvas id="eleCanvas" class="canvas-box"></canvas>
-    </div>
-
     <div id="card-map" class="card" style="padding: 4px;">
       <div id="map"></div>
     </div>
 
   </div>
 
-  <!-- 4-Button Controls Grid (Far Right RESET Button) -->
+  <!-- Control Buttons Dock -->
   <div class="controls-grid">
     <button id="startBtn" class="btn" onclick="startRide()">START</button>
     <button id="pauseBtn" class="btn" onclick="pauseRide()">PAUSE</button>
@@ -588,7 +643,7 @@
     }
 
     let isMetric = true;
-    let rideState = 'STOPPED'; 
+    let rideState = 'STOPPED'; // STOPPED, RUNNING, PAUSED, AUTO_PAUSED
     let watchId = null;
     let wakeLock = null;
 
@@ -602,12 +657,14 @@
     let totalEleGain = 0;
     let lastPosition = null;
 
-    let eleHistory = [];
+    let zeroSpeedCount = 0;
     let gpxTrackPoints = [];
+    let rideHistory = [];
     let map, routePolyline, userMarker;
 
     window.onload = () => {
       loadLayoutPreferences();
+      loadRideHistory();
       initMap();
     };
 
@@ -629,6 +686,7 @@
 
     function toggleMenu() {
       document.getElementById('menuModal').classList.toggle('active');
+      renderHistoryList();
     }
 
     function setUnits(type) {
@@ -637,6 +695,7 @@
       document.getElementById('btnMi').classList.toggle('active', !isMetric);
       document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
       if (lastPosition) updateDisplay(lastPosition);
+      renderHistoryList();
     }
 
     function moveTileUp(btn) {
@@ -706,17 +765,18 @@
       if (rideState === 'RUNNING') return;
 
       rideState = 'RUNNING';
+      zeroSpeedCount = 0;
       requestWakeLock();
 
       document.getElementById('startBtn').classList.add('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
-      document.getElementById('statusDot').classList.add('active');
+      document.getElementById('statusDot').className = 'status-dot active';
       document.getElementById('statusText').innerText = 'RECORDING';
 
       startTime = Date.now() - elapsedTime;
-      timerInterval = setInterval(updateTimer, 1000);
+      if (!timerInterval) timerInterval = setInterval(updateTimer, 1000);
 
-      if (navigator.geolocation) {
+      if (!watchId && navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
           enableHighAccuracy: true,
           maximumAge: 0,
@@ -726,34 +786,47 @@
     }
 
     function pauseRide() {
-      if (rideState !== 'RUNNING') return;
+      if (rideState === 'STOPPED') return;
 
       rideState = 'PAUSED';
-      clearInterval(timerInterval);
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.add('active-pause');
-      document.getElementById('statusDot').classList.remove('active');
+      document.getElementById('statusDot').className = 'status-dot';
       document.getElementById('statusText').innerText = 'PAUSED';
     }
 
-    // STOP pauses logging without erasing recorded data
+    function autoPauseRide() {
+      rideState = 'AUTO_PAUSED';
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+      document.getElementById('startBtn').classList.remove('active-start');
+      document.getElementById('pauseBtn').classList.add('active-pause');
+      document.getElementById('statusDot').className = 'status-dot auto-paused';
+      document.getElementById('statusText').innerText = 'AUTO-PAUSED';
+    }
+
     function stopRide() {
+      if (rideState === 'STOPPED') return;
+
+      // Save ride to history if points exist
+      if (gpxTrackPoints.length > 0) {
+        saveCurrentRideToHistory();
+      }
+
       rideState = 'STOPPED';
-      clearInterval(timerInterval);
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
-      document.getElementById('statusDot').classList.remove('active');
+      document.getElementById('statusDot').className = 'status-dot';
       document.getElementById('statusText').innerText = 'STOPPED';
     }
 
-    // RESET Button clears all accumulated statistics for a fresh ride
     function resetRide() {
       if (confirm("Reset all ride data and start fresh?")) {
-        stopRide();
+        if (rideState !== 'STOPPED') stopRide();
 
         elapsedTime = 0;
         movingTimeSecs = 0;
@@ -761,7 +834,7 @@
         maxSpeedMps = 0;
         totalEleGain = 0;
         lastPosition = null;
-        eleHistory = [];
+        zeroSpeedCount = 0;
         gpxTrackPoints = [];
 
         document.getElementById('statusText').innerText = 'READY';
@@ -793,11 +866,34 @@
         if (!userMarker) {
           userMarker = L.circleMarker(latLng, { radius: 6, color: '#30d158', fillColor: '#30d158', fillOpacity: 1 }).addTo(map);
           map.setView(latLng, 16);
-          map.invalidateSize();
         } else {
           userMarker.setLatLng(latLng);
           map.panTo(latLng);
         }
+      }
+
+      // Speed thresholding for Auto-Pause/Resume
+      const speedKmH = rawSpeed * 3.6;
+      const isMoving = speedKmH >= 1.2;
+
+      if (rideState === 'RUNNING') {
+        if (!isMoving) {
+          zeroSpeedCount++;
+          if (zeroSpeedCount >= 3) {
+            autoPauseRide();
+            return;
+          }
+        } else {
+          zeroSpeedCount = 0;
+        }
+      } else if (rideState === 'AUTO_PAUSED' && isMoving) {
+        startRide();
+      }
+
+      // Block recording if paused or stopped
+      if (rideState !== 'RUNNING') {
+        if (lastPosition) updateDisplay({ ...lastPosition, speed: 0 });
+        return;
       }
 
       const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
@@ -806,7 +902,7 @@
       if (lastPosition) {
         const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
 
-        if (d > 3.0 && filteredSpeed > 0) {
+        if (d > 2.5 && filteredSpeed > 0) {
           totalDistanceMeters += d;
           if (routePolyline) routePolyline.addLatLng(latLng);
           gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, time: timestamp });
@@ -856,14 +952,81 @@
         `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    function downloadGPX() {
-      if (gpxTrackPoints.length === 0) {
-        alert("No GPS route points recorded yet. Press START and record a ride first.");
+    /* Ride History Management */
+    function saveCurrentRideToHistory() {
+      const dateIso = new Date().toISOString();
+      const dateFormatted = new Date().toLocaleDateString();
+      const avgSpeedMps = movingTimeSecs > 0 ? (totalDistanceMeters / movingTimeSecs) : 0;
+
+      const record = {
+        id: Date.now(),
+        date: dateFormatted,
+        isoDate: dateIso.split('T')[0],
+        distanceMeters: totalDistanceMeters,
+        movingSecs: movingTimeSecs,
+        avgSpeedMps: avgSpeedMps,
+        trackPoints: [...gpxTrackPoints]
+      };
+
+      rideHistory.unshift(record);
+      localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
+    }
+
+    function loadRideHistory() {
+      const saved = localStorage.getItem('horo_ride_history');
+      if (saved) {
+        try { rideHistory = JSON.parse(saved); } catch (e) { rideHistory = []; }
+      }
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyContainer');
+      if (rideHistory.length === 0) {
+        container.innerHTML = `<div style="font-size:11px; color:var(--text-dim); padding:8px 0;">No saved rides found.</div>`;
         return;
       }
 
-      const dateToday = new Date().toISOString().split('T')[0];
-      const filename = `HoroGPS_${dateToday}.gpx`;
+      container.innerHTML = rideHistory.map(item => {
+        const dist = isMetric ? (item.distanceMeters / 1000).toFixed(2) + ' km' : (item.distanceMeters / 1609.34).toFixed(2) + ' mi';
+        const avg = isMetric ? (item.avgSpeedMps * 3.6).toFixed(1) + ' km/h' : (item.avgSpeedMps * 2.23694).toFixed(1) + ' mph';
+        
+        return `
+          <div class="history-item">
+            <div class="history-info">
+              <div class="history-date">${item.date}</div>
+              <div class="history-meta">${dist} • ${avg} avg</div>
+            </div>
+            <div class="history-actions">
+              <button class="hist-btn dl" onclick="exportHistoryGPX(${item.id})">GPX</button>
+              <button class="hist-btn del" onclick="deleteHistoryItem(${item.id})">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function deleteHistoryItem(id) {
+      rideHistory = rideHistory.filter(item => item.id !== id);
+      localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
+      renderHistoryList();
+    }
+
+    function exportHistoryGPX(id) {
+      const ride = rideHistory.find(item => item.id === id);
+      if (ride) exportGPXFile(ride.trackPoints, ride.isoDate);
+    }
+
+    function downloadCurrentGPX() {
+      if (gpxTrackPoints.length === 0) {
+        alert("No current ride track recorded.");
+        return;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      exportGPXFile(gpxTrackPoints, today);
+    }
+
+    function exportGPXFile(trackPoints, dateStr) {
+      const filename = `HoroGPS_${dateStr}.gpx`;
 
       let gpxXml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
       gpxXml += `<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1">\n`;
@@ -872,10 +1035,10 @@
       gpxXml += `    <time>${new Date().toISOString()}</time>\n`;
       gpxXml += `  </metadata>\n`;
       gpxXml += `  <trk>\n`;
-      gpxXml += `    <name>放浪 Ride - ${dateToday}</name>\n`;
+      gpxXml += `    <name>放浪 Ride - ${dateStr}</name>\n`;
       gpxXml += `    <trkseg>\n`;
 
-      gpxTrackPoints.forEach(pt => {
+      trackPoints.forEach(pt => {
         gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}">\n`;
         gpxXml += `        <ele>${pt.alt.toFixed(1)}</ele>\n`;
         gpxXml += `        <time>${pt.time}</time>\n`;
