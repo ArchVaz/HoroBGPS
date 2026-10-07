@@ -419,9 +419,37 @@
       display: none !important;
     }
 
+    /* Speed Tile Sizing - Dynamically Scales When Map is Off */
     .primary-metric {
       text-align: center;
       padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: flex 0.2s ease, font-size 0.2s ease;
+    }
+
+    .speed-value {
+      font-size: 72px;
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -2px;
+      color: var(--text-white);
+      transition: font-size 0.2s ease;
+    }
+
+    /* When Map Tile is Disabled: Expand Speed Tile & Increase Typography */
+    body.map-disabled .primary-metric {
+      flex: 1;
+    }
+
+    body.map-disabled .speed-value {
+      font-size: 110px;
+    }
+
+    body.theme-sun .speed-value {
+      color: var(--accent-green);
     }
 
     .metric-label {
@@ -433,20 +461,8 @@
       margin-bottom: 2px;
     }
 
-    .speed-value {
-      font-size: 64px;
-      font-weight: 800;
-      line-height: 0.95;
-      letter-spacing: -2px;
-      color: var(--text-white);
-    }
-
-    body.theme-sun .speed-value {
-      color: var(--accent-green);
-    }
-
     .unit-label {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-dim);
       font-weight: 600;
       margin-top: 2px;
@@ -487,10 +503,11 @@
       display: block;
     }
 
-    /* Dynamic Map Tile Container - Flex 1 Expands to Fill Space */
+    /* Compact Map Tile - Capped at 32% screen height so Speed Tile is always dominant */
     #card-map {
-      flex: 1;
-      min-height: 100px;
+      flex: 0.8;
+      max-height: 32vh;
+      min-height: 90px;
       display: flex;
       flex-direction: column;
       padding: 2px;
@@ -983,9 +1000,13 @@
 
       const mapChk = document.getElementById('chk-map');
       isMapTileEnabled = mapChk ? mapChk.checked : true;
+
+      // Toggle dynamic map body state to expand Speed Tile when map is off
       if (isMapTileEnabled) {
+        document.body.classList.remove('map-disabled');
         initMap();
       } else {
+        document.body.classList.add('map-disabled');
         destroyMap();
       }
 
@@ -1270,170 +1291,4 @@
               lon,
               alt,
               speed: filteredSpeed,
-              distance: totalDistanceMeters,
-              grade: currentGrade,
-              time: timestamp
-            });
-          }
-        } else {
-          gpxTrackPoints.push({
-            lat,
-            lon,
-            alt,
-            speed: filteredSpeed,
-            distance: totalDistanceMeters,
-            grade: currentGrade,
-            time: timestamp
-          });
-        }
-
-        if (filteredSpeed > maxSpeedMps) maxSpeedMps = filteredSpeed;
-      }
-
-      lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: filteredSpeed };
-      updateDisplay(lastPosition);
-    }
-
-    function updateDisplay(pos) {
-      const currSpeed = isMetric ? (pos.speed * 3.6) : (pos.speed * 2.23694);
-      const maxSpeed = isMetric ? (maxSpeedMps * 3.6) : (maxSpeedMps * 2.23694);
-      const distance = isMetric ? (totalDistanceMeters / 1000) : (totalDistanceMeters / 1609.34);
-      
-      const avgSpeedMps = movingTimeSecs > 0 ? (totalDistanceMeters / movingTimeSecs) : 0;
-      const avgSpeed = isMetric ? (avgSpeedMps * 3.6) : (avgSpeedMps * 2.23694);
-      
-      const eleGain = isMetric ? totalEleGain : totalEleGain * 3.28084;
-      const altitude = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : '--';
-
-      document.getElementById('speedVal').innerText = currSpeed.toFixed(1);
-      document.getElementById('distVal').innerHTML = `${distance.toFixed(2)} <span>${isMetric ? 'km' : 'mi'}</span>`;
-      document.getElementById('avgSpeedVal').innerHTML = `${avgSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-      document.getElementById('maxSpeedVal').innerHTML = `${maxSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-      document.getElementById('gradeVal').innerHTML = `${currentGrade.toFixed(1)} <span>%</span>`;
-      document.getElementById('eleGainVal').innerHTML = `${Math.round(eleGain)} <span>${isMetric ? 'm' : 'ft'}</span>`;
-      document.getElementById('altVal').innerHTML = `${altitude !== '--' ? Math.round(altitude) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
-    }
-
-    function updateTimer() {
-      if (rideState === 'RUNNING') {
-        elapsedTime = Date.now() - startTime;
-      }
-      const totalSecs = Math.floor(elapsedTime / 1000);
-      const hrs = Math.floor(totalSecs / 3600);
-      const mins = Math.floor((totalSecs % 3600) / 60);
-      const secs = totalSecs % 60;
-
-      document.getElementById('timerVal').innerText =
-        `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    function saveRideToHistory() {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const distStr = (isMetric ? (totalDistanceMeters / 1000) : (totalDistanceMeters / 1609.34)).toFixed(2) + (isMetric ? ' km' : ' mi');
-      const timeStr = document.getElementById('timerVal').innerText;
-
-      const newRide = {
-        id: Date.now(),
-        date: dateStr,
-        distance: distStr,
-        time: timeStr,
-        points: [...gpxTrackPoints]
-      };
-
-      rideHistory.unshift(newRide);
-      localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
-      renderRideHistory();
-    }
-
-    function loadRideHistory() {
-      const saved = localStorage.getItem('horo_ride_history');
-      if (saved) {
-        rideHistory = JSON.parse(saved);
-        renderRideHistory();
-      }
-    }
-
-    function renderRideHistory() {
-      const container = document.getElementById('historyContainer');
-      container.innerHTML = '';
-
-      if (rideHistory.length === 0) {
-        container.innerHTML = `<div style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 20px 0;">No saved rides found.</div>`;
-        return;
-      }
-
-      rideHistory.forEach(ride => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.innerHTML = `
-          <div>
-            <div class="history-date">${ride.date}</div>
-            <div class="history-stats">${ride.distance} • ${ride.time}</div>
-          </div>
-          <div class="history-actions">
-            <button class="history-btn gpx-btn" onclick="exportHistoryGPX(${ride.id})">GPX</button>
-            <button class="history-btn" style="color: var(--accent-red);" onclick="deleteHistoryRide(${ride.id})">✕</button>
-          </div>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    function deleteHistoryRide(id) {
-      rideHistory = rideHistory.filter(r => r.id !== id);
-      localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
-      renderRideHistory();
-    }
-
-    function exportHistoryGPX(id) {
-      const ride = rideHistory.find(r => r.id === id);
-      if (ride) generateGPXDownload(ride.points, `HoroGPS_${ride.date}.gpx`);
-    }
-
-    function generateGPXDownload(points, filename) {
-      let gpxXml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-      gpxXml += `<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\n`;
-      gpxXml += `  <metadata><name>${filename}</name><time>${new Date().toISOString()}</time></metadata>\n`;
-      gpxXml += `  <trk><name>放浪 Ride</name><trkseg>\n`;
-
-      points.forEach(pt => {
-        gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}">\n`;
-        gpxXml += `        <ele>${(pt.alt || 0).toFixed(1)}</ele>\n`;
-        gpxXml += `        <time>${pt.time}</time>\n`;
-        gpxXml += `        <speed>${(pt.speed || 0).toFixed(2)}</speed>\n`;
-        if (pt.distance !== undefined) {
-          gpxXml += `        <extensions><gpxtpx:TrackPointExtension><gpxtpx:distance>${pt.distance.toFixed(1)}</gpxtpx:distance></gpxtpx:TrackPointExtension></extensions>\n`;
-        }
-        gpxXml += `      </trkpt>\n`;
-      });
-
-      gpxXml += `    </trkseg></trk></gpx>`;
-
-      const blob = new Blob([gpxXml], { type: 'application/gpx+xml' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    function calcDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    function handleError(err) {
-      document.getElementById('statusText').innerText = 'SEARCHING GPS';
-    }
-  </script>
-</body>
-</html>
+              distance: totalDistanceMeters

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v3-viewport-lock';
+const CACHE_NAME = 'horo-v4-dynamic-tiles';
 const ASSETS = [
   './',
   './index.html',
