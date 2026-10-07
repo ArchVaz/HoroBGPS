@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-autopause-savedtoast-v2';
+const CACHE_NAME = 'horo-minimal-slim-v1';
 const ASSETS = [
   './',
   './index.html',
