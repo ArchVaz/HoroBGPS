@@ -100,7 +100,7 @@
       padding: 4px 8px;
     }
 
-    /* Toast Notification */
+    /* Toast Notification Overlay */
     .toast-notification {
       position: fixed;
       top: 20px;
@@ -366,7 +366,7 @@
       border-color: rgba(48, 209, 88, 0.3);
     }
 
-    /* Dashboard Grid System */
+    /* Dashboard Layout */
     .dashboard-container {
       display: flex;
       flex-direction: column;
@@ -469,7 +469,7 @@
       filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
-    /* Controls Grid */
+    /* Bottom Control Dock */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -562,7 +562,7 @@
         <button class="close-btn" onclick="toggleMenu()">✕</button>
       </div>
 
-      <!-- Tabs Navigation -->
+      <!-- Menu Tabs Navigation -->
       <div class="menu-tabs">
         <button id="tabBtnTiles" class="tab-btn active" onclick="switchTab('tiles')">TILES</button>
         <button id="tabBtnHistory" class="tab-btn" onclick="switchTab('history')">HISTORY</button>
@@ -968,7 +968,6 @@
       document.getElementById('statusDot').classList.add('active');
       document.getElementById('statusText').innerText = 'RECORDING';
 
-      // Precision timer anchor calculation
       startTime = Date.now() - elapsedTime;
       if (!timerInterval) {
         timerInterval = setInterval(updateTimer, 1000);
@@ -1069,7 +1068,8 @@
       const accuracy = pos.coords.accuracy || 0;
       const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
 
-      if (accuracy > 25) return;
+      /* 1. RELAXED ACCURACY FILTER (Threshold bumped to 50m to prevent data drops in weak signal zones) */
+      if (accuracy > 50) return;
 
       const latLng = [lat, lon];
 
@@ -1086,13 +1086,12 @@
 
       const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
 
-      /* Auto-Pause & Precision Timer Freeze Logic */
+      /* 2. SENSITIVE STATIONARY DETECTION (Requires only 2 consecutive zero-speed points) */
       if (filteredSpeed === 0) {
         zeroSpeedCount++;
-        if (zeroSpeedCount >= 3 && rideState === 'RUNNING') {
+        if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
           rideState = 'AUTO-PAUSED';
           
-          // Freeze active timer interval
           if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
@@ -1108,7 +1107,6 @@
         if (rideState === 'AUTO-PAUSED' && !isManualStopped) {
           rideState = 'RUNNING';
 
-          // Recalculate start time relative to stored elapsed time
           startTime = Date.now() - elapsedTime;
           if (!timerInterval) {
             timerInterval = setInterval(updateTimer, 1000);
@@ -1127,7 +1125,8 @@
         if (lastPosition) {
           const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
 
-          if (d > 3.0) {
+          /* 3. LOWER DISTANCE FILTER (Threshold reduced to 1.0m to reliably capture slower rides/roll-outs) */
+          if (d > 1.0) {
             totalDistanceMeters += d;
             if (routePolyline) routePolyline.addLatLng(latLng);
             gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, time: timestamp });
