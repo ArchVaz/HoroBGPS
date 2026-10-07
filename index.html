@@ -107,6 +107,30 @@
       padding: 4px 8px;
     }
 
+    .toast-notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #111111;
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      z-index: 10000;
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .toast-notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -256,6 +280,49 @@
     input:checked + .slider { background-color: var(--accent-green); }
     input:checked + .slider:before { transform: translateX(18px); }
 
+    .history-item {
+      background: #0a0a0a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-date {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .history-stats {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .history-btn {
+      background: #181818;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-white);
+      padding: 5px 8px;
+      font-size: 9px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .history-btn.gpx-btn {
+      color: var(--accent-green);
+      border-color: rgba(48, 209, 88, 0.3);
+    }
+
     /* Main Responsive Layout */
     .dashboard-container {
       flex: 1;
@@ -291,7 +358,6 @@
 
     .card.hidden { display: none !important; }
 
-    /* Compact Primary Speed Card Container */
     .primary-metric {
       flex: 1.2;
       max-height: 22vh;
@@ -301,7 +367,6 @@
       transition: max-height 0.2s ease, flex 0.2s ease;
     }
 
-    /* Keep Speed Typography Original Size (72px) */
     .speed-value {
       font-size: 72px;
       font-weight: 800;
@@ -361,7 +426,6 @@
       line-height: 1;
     }
 
-    /* Balanced Responsive Map Tile */
     #card-map {
       flex: 1.5;
       min-height: 100px;
@@ -379,7 +443,6 @@
       filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
-    /* Bottom Dock Controls */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -431,6 +494,9 @@
   </style>
 </head>
 <body>
+
+  <!-- Toast Notification Overlay -->
+  <div id="toast" class="toast-notification">Ride Saved</div>
 
   <!-- Header -->
   <div class="header">
@@ -609,6 +675,7 @@
     let zeroSpeedCount = 0;
 
     let gpxTrackPoints = [];
+    let rideHistory = [];
     let map = null, routePolyline = null, userMarker = null;
     let stopHoldProgress = 0, stopInterval = null;
 
@@ -616,6 +683,9 @@
       document.getElementById('menuToggleBtn').onclick = () => document.getElementById('menuModal').classList.add('active');
       document.getElementById('menuCloseBtn').onclick = () => document.getElementById('menuModal').classList.remove('active');
       
+      document.getElementById('tabBtnTiles').onclick = () => switchTab('tiles');
+      document.getElementById('tabBtnHistory').onclick = () => switchTab('history');
+
       document.getElementById('btnThemeDark').onclick = () => setTheme('dark');
       document.getElementById('btnThemeSun').onclick = () => setTheme('sun');
       
@@ -629,10 +699,31 @@
       const switches = document.querySelectorAll('#reorderList input[type="checkbox"]');
       switches.forEach(sw => sw.onchange = updateLayout);
 
+      loadRideHistory();
       initMap();
       setupHoldToStop();
       updateLayout();
     });
+
+    function switchTab(tabName) {
+      const btnTiles = document.getElementById('tabBtnTiles');
+      const btnHistory = document.getElementById('tabBtnHistory');
+      const contentTiles = document.getElementById('tabContentTiles');
+      const contentHistory = document.getElementById('tabContentHistory');
+
+      if (tabName === 'tiles') {
+        btnTiles.classList.add('active');
+        btnHistory.classList.remove('active');
+        contentTiles.classList.add('active');
+        contentHistory.classList.remove('active');
+      } else {
+        btnHistory.classList.add('active');
+        btnTiles.classList.remove('active');
+        contentHistory.classList.add('active');
+        contentTiles.classList.remove('active');
+        renderRideHistory();
+      }
+    }
 
     function setTheme(mode) {
       currentTheme = mode;
@@ -671,7 +762,6 @@
         }
       });
 
-      // Dynamically adjust grid rows if stats or elevation sub-tiles are toggled
       const statsRow = document.getElementById('row-stats');
       const visibleStats = [
         document.getElementById('chk-dist').checked,
@@ -786,6 +876,8 @@
     }
 
     function executeStopRide() {
+      if (rideState === 'STOPPED') return;
+
       rideState = 'STOPPED';
       isManualStopped = true;
 
@@ -802,6 +894,11 @@
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.remove('active');
       document.getElementById('statusText').innerText = 'STOPPED';
+
+      if (gpxTrackPoints.length > 2) {
+        saveRideToHistory();
+        showSavedToast();
+      }
     }
 
     function resetRide() {
@@ -856,7 +953,6 @@
 
       const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
 
-      // Auto-Pause Engine
       if (filteredSpeed === 0) {
         zeroSpeedCount++;
         if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
@@ -945,6 +1041,103 @@
 
       document.getElementById('timerVal').innerText =
         `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function showSavedToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function saveRideToHistory() {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const distStr = (isMetric ? (totalDistanceMeters / 1000) : (totalDistanceMeters / 1609.34)).toFixed(2) + (isMetric ? ' km' : ' mi');
+      const timeStr = document.getElementById('timerVal').innerText;
+
+      const newRide = {
+        id: Date.now(),
+        date: dateStr,
+        distance: distStr,
+        time: timeStr,
+        points: [...gpxTrackPoints]
+      };
+
+      rideHistory.unshift(newRide);
+      localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
+      renderRideHistory();
+    }
+
+    function loadRideHistory() {
+      const saved = localStorage.getItem('horo_ride_history');
+      if (saved) {
+        rideHistory = JSON.parse(saved);
+        renderRideHistory();
+      }
+    }
+
+    function renderRideHistory() {
+      const container = document.getElementById('historyContainer');
+      container.innerHTML = '';
+
+      if (rideHistory.length === 0) {
+        container.innerHTML = `<div style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 20px 0;">No saved rides found.</div>`;
+        return;
+      }
+
+      rideHistory.forEach(ride => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+          <div>
+            <div class="history-date">${ride.date}</div>
+            <div class="history-stats">${ride.distance} • ${ride.time}</div>
+          </div>
+          <div class="history-actions">
+            <button class="history-btn gpx-btn" onclick="exportHistoryGPX(${ride.id})">GPX</button>
+            <button class="history-btn" style="color: var(--accent-red);" onclick="deleteHistoryRide(${ride.id})">✕</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function deleteHistoryRide(id) {
+      rideHistory = rideHistory.filter(r => r.id !== id);
+      localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
+      renderRideHistory();
+    }
+
+    function exportHistoryGPX(id) {
+      const ride = rideHistory.find(r => r.id === id);
+      if (ride) generateGPXDownload(ride.points, `HoroGPS_${ride.date}.gpx`);
+    }
+
+    function generateGPXDownload(points, filename) {
+      let gpxXml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      gpxXml += `<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\n`;
+      gpxXml += `  <metadata><name>${filename}</name><time>${new Date().toISOString()}</time></metadata>\n`;
+      gpxXml += `  <trk><name>放浪 Ride</name><trkseg>\n`;
+
+      points.forEach(pt => {
+        gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}">\n`;
+        gpxXml += `        <ele>${(pt.alt || 0).toFixed(1)}</ele>\n`;
+        gpxXml += `        <time>${pt.time}</time>\n`;
+        gpxXml += `        <speed>${(pt.speed || 0).toFixed(2)}</speed>\n`;
+        if (pt.distance !== undefined) {
+          gpxXml += `        <extensions><gpxtpx:TrackPointExtension><gpxtpx:distance>${pt.distance.toFixed(1)}</gpxtpx:distance></gpxtpx:TrackPointExtension></extensions>\n`;
+        }
+        gpxXml += `      </trkpt>\n`;
+      });
+
+      gpxXml += `    </trkseg></trk></gpx>`;
+
+      const blob = new Blob([gpxXml], { type: 'application/gpx+xml' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function calcDistance(lat1, lon1, lat2, lon2) {

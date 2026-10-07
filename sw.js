@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v8-responsive-tiles';
+const CACHE_NAME = 'horo-v9-history-gpx-fix';
 const ASSETS = [
   './',
   './index.html',
