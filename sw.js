@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v6-button-fix';
+const CACHE_NAME = 'horo-v7-gps-restore';
 const ASSETS = [
   './',
   './index.html',

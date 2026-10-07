@@ -107,7 +107,6 @@
       padding: 4px 8px;
     }
 
-    /* Modal Overlay */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -257,7 +256,6 @@
     input:checked + .slider { background-color: var(--accent-green); }
     input:checked + .slider:before { transform: translateX(18px); }
 
-    /* Dashboard Layout & Dynamic Scaling */
     .dashboard-container {
       flex: 1;
       display: flex;
@@ -296,20 +294,19 @@
     }
 
     .speed-value {
-      font-size: 64px;
+      font-size: 72px;
       font-weight: 800;
       line-height: 0.95;
       letter-spacing: -2px;
       transition: font-size 0.25s ease;
     }
 
-    /* Expand Speed Tile & Numbers When Map is OFF */
     body.map-disabled .primary-metric {
       flex: 1;
     }
 
     body.map-disabled .speed-value {
-      font-size: 115px;
+      font-size: 88px;
     }
 
     body.theme-sun .speed-value { color: var(--accent-green); }
@@ -339,7 +336,6 @@
       text-align: center;
     }
 
-    /* Map Tile Sizing */
     #card-map {
       flex: 0.8;
       max-height: 30vh;
@@ -571,8 +567,25 @@
     let isMetric = true;
     let currentTheme = 'dark';
     let isMapTileEnabled = true;
-    let rideState = 'STOPPED';
-    let map = null;
+
+    let rideState = 'STOPPED'; 
+    let isManualStopped = false;
+    let watchId = null;
+
+    let startTime = 0;
+    let elapsedTime = 0;
+    let movingTimeSecs = 0;
+    let timerInterval = null;
+
+    let totalDistanceMeters = 0;
+    let maxSpeedMps = 0;
+    let totalEleGain = 0;
+    let currentGrade = 0;
+    let lastPosition = null;
+    let zeroSpeedCount = 0;
+
+    let gpxTrackPoints = [];
+    let map = null, routePolyline = null, userMarker = null;
     let stopHoldProgress = 0, stopInterval = null;
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -603,10 +616,14 @@
         document.body.classList.add('theme-sun');
         document.getElementById('btnThemeDark').classList.remove('active');
         document.getElementById('btnThemeSun').classList.add('active');
+        if (routePolyline) routePolyline.setStyle({ color: '#00ff66' });
+        if (userMarker) userMarker.setStyle({ color: '#00ff66', fillColor: '#00ff66' });
       } else {
         document.body.classList.remove('theme-sun');
         document.getElementById('btnThemeSun').classList.remove('active');
         document.getElementById('btnThemeDark').classList.add('active');
+        if (routePolyline) routePolyline.setStyle({ color: '#30d158' });
+        if (userMarker) userMarker.setStyle({ color: '#30d158', fillColor: '#30d158' });
       }
     }
 
@@ -615,6 +632,7 @@
       document.getElementById('btnKm').classList.toggle('active', isMetric);
       document.getElementById('btnMi').classList.toggle('active', !isMetric);
       document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
+      if (lastPosition) updateDisplay(lastPosition);
     }
 
     function updateLayout() {
@@ -647,6 +665,8 @@
       if (typeof L === 'undefined' || map) return;
       map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+      const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
+      routePolyline = L.polyline([], { color: trackColor, weight: 4 }).addTo(map);
     }
 
     function setupHoldToStop() {
@@ -682,16 +702,38 @@
 
     function startRide() {
       if (rideState === 'RUNNING') return;
+
       rideState = 'RUNNING';
+      isManualStopped = false;
+
       document.getElementById('startBtn').classList.add('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.add('active');
       document.getElementById('statusText').innerText = 'RECORDING';
+
+      startTime = Date.now() - elapsedTime;
+      if (!timerInterval) {
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      if (navigator.geolocation && !watchId) {
+        watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        });
+      }
     }
 
     function pauseRide() {
-      if (rideState !== 'RUNNING') return;
+      if (rideState !== 'RUNNING' && rideState !== 'AUTO-PAUSED') return;
+
       rideState = 'PAUSED';
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.add('active-pause');
       document.getElementById('statusDot').classList.remove('active');
@@ -700,6 +742,17 @@
 
     function executeStopRide() {
       rideState = 'STOPPED';
+      isManualStopped = true;
+
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.remove('active');
@@ -708,8 +761,162 @@
 
     function resetRide() {
       executeStopRide();
-      document.getElementById('speedVal').innerText = "0.0";
+
+      elapsedTime = 0;
+      movingTimeSecs = 0;
+      totalDistanceMeters = 0;
+      maxSpeedMps = 0;
+      totalEleGain = 0;
+      currentGrade = 0;
+      lastPosition = null;
+      gpxTrackPoints = [];
+
       document.getElementById('statusText').innerText = 'READY';
+      document.getElementById('timerVal').innerText = "00:00:00";
+      document.getElementById('speedVal').innerText = "0.0";
+      document.getElementById('distVal').innerHTML = `0.00 <span>${isMetric ? 'km' : 'mi'}</span>`;
+      document.getElementById('avgSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('maxSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('gradeVal').innerHTML = `0.0 <span>%</span>`;
+      document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
+      document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
+
+      if (routePolyline) routePolyline.setLatLngs([]);
+    }
+
+    function handlePosition(pos) {
+      if (isManualStopped) return;
+
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const alt = pos.coords.altitude || 0;
+      const rawSpeed = pos.coords.speed || 0;
+      const accuracy = pos.coords.accuracy || 0;
+      const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
+
+      if (accuracy > 50) return;
+
+      const latLng = [lat, lon];
+
+      if (isMapTileEnabled && map) {
+        const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
+        if (!userMarker) {
+          userMarker = L.circleMarker(latLng, { radius: 6, color: trackColor, fillColor: trackColor, fillOpacity: 1 }).addTo(map);
+          map.setView(latLng, 16);
+        } else {
+          userMarker.setLatLng(latLng);
+          map.panTo(latLng);
+        }
+      }
+
+      const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
+
+      // Auto-Pause Engine
+      if (filteredSpeed === 0) {
+        zeroSpeedCount++;
+        if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
+          rideState = 'AUTO-PAUSED';
+          if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+          }
+          document.getElementById('statusText').innerText = 'AUTO-PAUSED';
+          document.getElementById('statusDot').classList.remove('active');
+          document.getElementById('startBtn').classList.remove('active-start');
+          document.getElementById('pauseBtn').classList.add('active-pause');
+        }
+      } else {
+        zeroSpeedCount = 0;
+        if (rideState === 'AUTO-PAUSED' && !isManualStopped) {
+          rideState = 'RUNNING';
+          startTime = Date.now() - elapsedTime;
+          if (!timerInterval) {
+            timerInterval = setInterval(updateTimer, 1000);
+          }
+          document.getElementById('statusText').innerText = 'RECORDING';
+          document.getElementById('statusDot').classList.add('active');
+          document.getElementById('pauseBtn').classList.remove('active-pause');
+          document.getElementById('startBtn').classList.add('active-start');
+        }
+      }
+
+      if (rideState === 'RUNNING' && filteredSpeed > 0) {
+        movingTimeSecs++;
+
+        if (lastPosition) {
+          const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
+          if (d > 1.0) {
+            totalDistanceMeters += d;
+            if (isMapTileEnabled && routePolyline) routePolyline.addLatLng(latLng);
+
+            if (alt !== null && lastPosition.altitude !== null) {
+              const eleDiff = alt - lastPosition.altitude;
+              if (eleDiff > 2.0) totalEleGain += eleDiff;
+              currentGrade = (eleDiff / d) * 100;
+              if (Math.abs(currentGrade) > 35) currentGrade = 0;
+            }
+
+            gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
+          }
+        } else {
+          gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
+        }
+
+        if (filteredSpeed > maxSpeedMps) maxSpeedMps = filteredSpeed;
+      }
+
+      lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: filteredSpeed };
+      updateDisplay(lastPosition);
+    }
+
+    function updateDisplay(pos) {
+      const currSpeed = isMetric ? (pos.speed * 3.6) : (pos.speed * 2.23694);
+      const maxSpeed = isMetric ? (maxSpeedMps * 3.6) : (maxSpeedMps * 2.23694);
+      const distance = isMetric ? (totalDistanceMeters / 1000) : (totalDistanceMeters / 1609.34);
+      
+      const avgSpeedMps = movingTimeSecs > 0 ? (totalDistanceMeters / movingTimeSecs) : 0;
+      const avgSpeed = isMetric ? (avgSpeedMps * 3.6) : (avgSpeedMps * 2.23694);
+      
+      const eleGain = isMetric ? totalEleGain : totalEleGain * 3.28084;
+      const altitude = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : '--';
+
+      document.getElementById('speedVal').innerText = currSpeed.toFixed(1);
+      document.getElementById('distVal').innerHTML = `${distance.toFixed(2)} <span>${isMetric ? 'km' : 'mi'}</span>`;
+      document.getElementById('avgSpeedVal').innerHTML = `${avgSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('maxSpeedVal').innerHTML = `${maxSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('gradeVal').innerHTML = `${currentGrade.toFixed(1)} <span>%</span>`;
+      document.getElementById('eleGainVal').innerHTML = `${Math.round(eleGain)} <span>${isMetric ? 'm' : 'ft'}</span>`;
+      document.getElementById('altVal').innerHTML = `${altitude !== '--' ? Math.round(altitude) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
+    }
+
+    function updateTimer() {
+      if (rideState === 'RUNNING') {
+        elapsedTime = Date.now() - startTime;
+      }
+      const totalSecs = Math.floor(elapsedTime / 1000);
+      const hrs = Math.floor(totalSecs / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      const secs = totalSecs % 60;
+
+      document.getElementById('timerVal').innerText =
+        `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function calcDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function handleError(err) {
+      document.getElementById('statusText').innerText = 'SEARCHING GPS';
     }
   </script>
 </body>
