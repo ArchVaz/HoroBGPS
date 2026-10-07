@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-theme-fix-v1';
+const CACHE_NAME = 'horo-v2-force-refresh';
 const ASSETS = [
   './',
   './index.html',
@@ -28,14 +28,13 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(e.request).then((networkResponse) => {
+      return cachedResponse || fetch(e.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(e.request, responseClone));
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
-    })
+      });
+    }).catch(() => fetch(e.request))
   );
 });
