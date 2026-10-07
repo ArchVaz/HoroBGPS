@@ -148,18 +148,20 @@
       border-radius: 16px;
       width: 100%;
       max-width: 380px;
-      max-height: 85vh;
-      overflow-y: auto;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
       padding: 20px;
+      overflow: hidden;
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       border-bottom: 1px solid var(--card-border);
-      padding-bottom: 12px;
+      padding-bottom: 10px;
     }
 
     .modal-title {
@@ -177,28 +179,47 @@
       cursor: pointer;
     }
 
-    .gpx-download-btn {
-      width: 100%;
-      background: #181818;
-      border: 1px solid var(--accent-green);
-      color: var(--accent-green);
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 800;
+    /* Menu Navigation Tabs */
+    .menu-tabs {
+      display: flex;
+      background: #000;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
       letter-spacing: 1px;
       cursor: pointer;
       text-align: center;
-      margin-bottom: 16px;
+      transition: background 0.15s, color 0.15s;
     }
 
-    .section-subtitle {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-dim);
-      letter-spacing: 1px;
-      margin: 14px 0 8px 0;
-      text-transform: uppercase;
+    .tab-btn.active {
+      background: #181818;
+      color: var(--text-white);
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 2px;
+      max-height: 55vh;
+    }
+
+    .tab-content.active {
+      display: flex;
     }
 
     .toggle-list {
@@ -215,7 +236,7 @@
       background: #121212;
       border-radius: 10px;
       border: 1px solid #1f1f1f;
-      touch-action: none;
+      touch-action: pan-y;
     }
 
     .toggle-left {
@@ -308,11 +329,10 @@
       background: #111;
       border: 1px solid #222;
       border-radius: 10px;
-      padding: 10px 12px;
+      padding: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
     }
 
     .history-date {
@@ -334,13 +354,18 @@
 
     .history-btn {
       background: #222;
-      border: none;
+      border: 1px solid #333;
       color: var(--text-white);
       padding: 6px 10px;
       font-size: 10px;
       font-weight: 700;
       border-radius: 6px;
       cursor: pointer;
+    }
+
+    .history-btn.gpx-btn {
+      color: var(--accent-green);
+      border-color: rgba(48, 209, 88, 0.3);
     }
 
     /* Dashboard Layout */
@@ -539,114 +564,121 @@
         <button class="close-btn" onclick="toggleMenu()">✕</button>
       </div>
 
-      <button class="gpx-download-btn" onclick="downloadGPX()">EXPORT ACTIVE RIDE (GPX)</button>
-
-      <div class="section-subtitle">Tile Customization</div>
-
-      <div class="toggle-list" id="reorderList">
-        
-        <div class="toggle-item" data-id="unit-setting">
-          <span class="toggle-label">Speed Units</span>
-          <div class="unit-selector">
-            <button id="btnKm" class="unit-opt active" onclick="setUnits('metric')">KM/H</button>
-            <button id="btnMi" class="unit-opt" onclick="setUnits('imperial')">MPH</button>
-          </div>
-        </div>
-
-        <div class="toggle-item" data-card="card-speed">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Current Speed</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-speed" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-dist">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Distance</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-dist" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-avg">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Average Speed</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-avg" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-max">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Max Speed</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-max" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-grade">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Inclination Grade (%)</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-grade" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-ele">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Elevation Gain</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-ele" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-alt">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Current Altitude</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-alt" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-time">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Elapsed Time</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-time" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-chart">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">Elevation Profile</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-chart" onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
-        <div class="toggle-item" data-card="card-map">
-          <div class="toggle-left">
-            <button class="order-btn" onclick="moveTileUp(this)">▲</button>
-            <button class="order-btn" onclick="moveTileDown(this)">▼</button>
-            <span class="toggle-label">GPS Map View</span>
-          </div>
-          <label class="switch"><input type="checkbox" id="chk-map" checked onchange="updateLayout()"><span class="slider"></span></label>
-        </div>
-
+      <!-- Menu Tabs Navigation -->
+      <div class="menu-tabs">
+        <button id="tabBtnTiles" class="tab-btn active" onclick="switchTab('tiles')">TILES</button>
+        <button id="tabBtnHistory" class="tab-btn" onclick="switchTab('history')">HISTORY</button>
       </div>
 
-      <div class="section-subtitle">Ride History</div>
-      <div id="historyContainer"></div>
+      <!-- Tab 1: Tile Customization -->
+      <div id="tabContentTiles" class="tab-content active">
+        <div class="toggle-list" id="reorderList">
+          
+          <div class="toggle-item" data-id="unit-setting">
+            <span class="toggle-label">Speed Units</span>
+            <div class="unit-selector">
+              <button id="btnKm" class="unit-opt active" onclick="setUnits('metric')">KM/H</button>
+              <button id="btnMi" class="unit-opt" onclick="setUnits('imperial')">MPH</button>
+            </div>
+          </div>
+
+          <div class="toggle-item" data-card="card-speed">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Current Speed</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-speed" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-dist">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Distance</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-dist" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-avg">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Average Speed</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-avg" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-max">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Max Speed</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-max" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-grade">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Inclination Grade (%)</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-grade" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-ele">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Elevation Gain</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-ele" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-alt">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Current Altitude</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-alt" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-time">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Elapsed Time</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-time" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-chart">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">Elevation Profile</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-chart" onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+          <div class="toggle-item" data-card="card-map">
+            <div class="toggle-left">
+              <button class="order-btn" onclick="moveTileUp(this)">▲</button>
+              <button class="order-btn" onclick="moveTileDown(this)">▼</button>
+              <span class="toggle-label">GPS Map View</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="chk-map" checked onchange="updateLayout()"><span class="slider"></span></label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Tab 2: Ride History -->
+      <div id="tabContentHistory" class="tab-content">
+        <div id="historyContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
 
     </div>
   </div>
@@ -785,6 +817,26 @@
 
     function toggleMenu() {
       document.getElementById('menuModal').classList.toggle('active');
+    }
+
+    function switchTab(tabName) {
+      const btnTiles = document.getElementById('tabBtnTiles');
+      const btnHistory = document.getElementById('tabBtnHistory');
+      const contentTiles = document.getElementById('tabContentTiles');
+      const contentHistory = document.getElementById('tabContentHistory');
+
+      if (tabName === 'tiles') {
+        btnTiles.classList.add('active');
+        btnHistory.classList.remove('active');
+        contentTiles.classList.add('active');
+        contentHistory.classList.remove('active');
+      } else {
+        btnHistory.classList.add('active');
+        btnTiles.classList.remove('active');
+        contentHistory.classList.add('active');
+        contentTiles.classList.remove('active');
+        renderRideHistory();
+      }
     }
 
     function setUnits(type) {
@@ -1141,7 +1193,7 @@
       container.innerHTML = '';
 
       if (rideHistory.length === 0) {
-        container.innerHTML = `<div style="font-size: 11px; color: var(--text-dim);">No saved rides yet.</div>`;
+        container.innerHTML = `<div style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 20px 0;">No saved rides found.</div>`;
         return;
       }
 
@@ -1154,8 +1206,8 @@
             <div class="history-stats">${ride.distance} • ${ride.time}</div>
           </div>
           <div class="history-actions">
-            <button class="history-btn" onclick="exportHistoryGPX(${ride.id})">GPX</button>
-            <button class="history-btn" style="color: var(--accent-red);" onclick="deleteHistoryRide(${ride.id})">✕</button>
+            <button class="history-btn gpx-btn" onclick="exportHistoryGPX(${ride.id})">GPX</button>
+            <button class="history-btn" style="color: var(--accent-red); border-color: rgba(255, 69, 58, 0.3);" onclick="deleteHistoryRide(${ride.id})">✕</button>
           </div>
         `;
         container.appendChild(item);
@@ -1171,15 +1223,6 @@
     function exportHistoryGPX(id) {
       const ride = rideHistory.find(r => r.id === id);
       if (ride) generateGPXDownload(ride.points, `HoroGPS_${ride.date}.gpx`);
-    }
-
-    function downloadGPX() {
-      if (gpxTrackPoints.length === 0) {
-        alert("No GPS route points recorded yet.");
-        return;
-      }
-      const dateToday = new Date().toISOString().split('T')[0];
-      generateGPXDownload(gpxTrackPoints, `HoroGPS_${dateToday}.gpx`);
     }
 
     function generateGPXDownload(points, filename) {
