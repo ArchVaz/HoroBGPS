@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v9-history-gpx-fix';
+const CACHE_NAME = 'horo-v10-modal-persistence-fix';
 const ASSETS = [
   './',
   './index.html',

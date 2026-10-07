@@ -131,6 +131,7 @@
       opacity: 1;
     }
 
+    /* Modal Overlay & Fixed Height Structure to Prevent Jumping */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -152,7 +153,8 @@
       border-radius: 16px;
       width: 100%;
       max-width: 380px;
-      max-height: 85vh;
+      height: 480px;
+      max-height: 80vh;
       display: flex;
       flex-direction: column;
       padding: 16px;
@@ -165,6 +167,7 @@
       margin-bottom: 10px;
       border-bottom: 1px solid var(--border-subtle);
       padding-bottom: 8px;
+      flex-shrink: 0;
     }
 
     .modal-title {
@@ -187,6 +190,7 @@
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       margin-bottom: 10px;
+      flex-shrink: 0;
     }
 
     .tab-btn {
@@ -210,7 +214,8 @@
       flex-direction: column;
       gap: 8px;
       overflow-y: auto;
-      max-height: 60vh;
+      flex: 1;
+      min-height: 0;
     }
 
     .tab-content.active {
@@ -699,10 +704,11 @@
       const switches = document.querySelectorAll('#reorderList input[type="checkbox"]');
       switches.forEach(sw => sw.onchange = updateLayout);
 
+      loadThemePreference();
+      loadLayoutPreferences();
       loadRideHistory();
       initMap();
       setupHoldToStop();
-      updateLayout();
     });
 
     function switchTab(tabName) {
@@ -727,6 +733,8 @@
 
     function setTheme(mode) {
       currentTheme = mode;
+      localStorage.setItem('horo_theme_pref', mode);
+
       if (mode === 'sun') {
         document.body.classList.add('theme-sun');
         document.getElementById('btnThemeDark').classList.remove('active');
@@ -742,6 +750,11 @@
       }
     }
 
+    function loadThemePreference() {
+      const savedTheme = localStorage.getItem('horo_theme_pref') || 'dark';
+      setTheme(savedTheme);
+    }
+
     function setUnits(type) {
       isMetric = (type === 'metric');
       document.getElementById('btnKm').classList.toggle('active', isMetric);
@@ -752,15 +765,20 @@
 
     function updateLayout() {
       const toggleItems = document.querySelectorAll('#reorderList .toggle-item[data-card]');
+      const visibilityPrefs = {};
+
       toggleItems.forEach(item => {
         const cardId = item.dataset.card;
         const cardEl = document.getElementById(cardId);
         const checkbox = item.querySelector('input[type="checkbox"]');
         if (cardEl && checkbox) {
+          visibilityPrefs[cardId] = checkbox.checked;
           if (checkbox.checked) cardEl.classList.remove('hidden');
           else cardEl.classList.add('hidden');
         }
       });
+
+      localStorage.setItem('horo_card_visibility_prefs', JSON.stringify(visibilityPrefs));
 
       const statsRow = document.getElementById('row-stats');
       const visibleStats = [
@@ -794,6 +812,21 @@
       if (map && isMapTileEnabled) {
         setTimeout(() => map.invalidateSize(), 150);
       }
+    }
+
+    function loadLayoutPreferences() {
+      const savedPrefs = localStorage.getItem('horo_card_visibility_prefs');
+      if (savedPrefs) {
+        const visibilityPrefs = JSON.parse(savedPrefs);
+        Object.keys(visibilityPrefs).forEach(cardId => {
+          const toggleItem = document.querySelector(`.toggle-item[data-card="${cardId}"]`);
+          if (toggleItem) {
+            const checkbox = toggleItem.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = visibilityPrefs[cardId];
+          }
+        });
+      }
+      updateLayout();
     }
 
     function initMap() {
