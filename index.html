@@ -100,7 +100,7 @@
       padding: 4px 8px;
     }
 
-    /* Ride Saved Toast Overlay */
+    /* Toast Notification */
     .toast-notification {
       position: fixed;
       top: 20px;
@@ -179,7 +179,6 @@
       cursor: pointer;
     }
 
-    /* Menu Navigation Tabs */
     .menu-tabs {
       display: flex;
       background: #000;
@@ -324,7 +323,6 @@
       transform: translateX(20px);
     }
 
-    /* History Log List */
     .history-item {
       background: #111;
       border: 1px solid #222;
@@ -368,7 +366,7 @@
       border-color: rgba(48, 209, 88, 0.3);
     }
 
-    /* Dashboard Layout */
+    /* Dashboard Grid System */
     .dashboard-container {
       display: flex;
       flex-direction: column;
@@ -471,7 +469,7 @@
       filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
-    /* Bottom Control Dock (Text Only) */
+    /* Controls Grid */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -564,13 +562,13 @@
         <button class="close-btn" onclick="toggleMenu()">✕</button>
       </div>
 
-      <!-- Menu Tabs Navigation -->
+      <!-- Tabs Navigation -->
       <div class="menu-tabs">
         <button id="tabBtnTiles" class="tab-btn active" onclick="switchTab('tiles')">TILES</button>
         <button id="tabBtnHistory" class="tab-btn" onclick="switchTab('history')">HISTORY</button>
       </div>
 
-      <!-- Tab 1: Tile Customization -->
+      <!-- Tab 1: Tiles -->
       <div id="tabContentTiles" class="tab-content active">
         <div class="toggle-list" id="reorderList">
           
@@ -675,7 +673,7 @@
         </div>
       </div>
 
-      <!-- Tab 2: Ride History -->
+      <!-- Tab 2: History -->
       <div id="tabContentHistory" class="tab-content">
         <div id="historyContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
@@ -744,7 +742,7 @@
 
   </div>
 
-  <!-- Bottom Control Dock (Text Only) -->
+  <!-- Bottom Control Dock -->
   <div class="controls-grid">
     <button id="startBtn" class="btn" onclick="startRide()">START</button>
     <button id="pauseBtn" class="btn" onclick="pauseRide()">PAUSE</button>
@@ -787,8 +785,6 @@
     let rideHistory = [];
     let map, routePolyline, userMarker;
 
-    // Hold-to-stop Variables
-    let stopHoldTimer = null;
     let stopHoldProgress = 0;
     let stopInterval = null;
 
@@ -912,7 +908,7 @@
       }, 3000);
     }
 
-    /* 2-Second Hold to Stop Implementation */
+    /* Hold to Stop Implementation */
     function setupHoldToStop() {
       const stopBtn = document.getElementById('stopBtn');
       const fillOverlay = document.getElementById('stopFill');
@@ -972,8 +968,11 @@
       document.getElementById('statusDot').classList.add('active');
       document.getElementById('statusText').innerText = 'RECORDING';
 
+      // Precision timer anchor calculation
       startTime = Date.now() - elapsedTime;
-      timerInterval = setInterval(updateTimer, 1000);
+      if (!timerInterval) {
+        timerInterval = setInterval(updateTimer, 1000);
+      }
 
       if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
@@ -988,7 +987,10 @@
       if (rideState !== 'RUNNING' && rideState !== 'AUTO-PAUSED') return;
 
       rideState = 'PAUSED';
-      clearInterval(timerInterval);
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
       if (watchId) navigator.geolocation.clearWatch(watchId);
 
       document.getElementById('startBtn').classList.remove('active-start');
@@ -1002,7 +1004,10 @@
 
       rideState = 'STOPPED';
       isManualStopped = true;
-      clearInterval(timerInterval);
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
       if (watchId) navigator.geolocation.clearWatch(watchId);
 
       document.getElementById('startBtn').classList.remove('active-start');
@@ -1020,7 +1025,10 @@
       if (confirm("Reset all ride data and start fresh?")) {
         rideState = 'STOPPED';
         isManualStopped = false;
-        clearInterval(timerInterval);
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
         if (watchId) navigator.geolocation.clearWatch(watchId);
 
         elapsedTime = 0;
@@ -1078,11 +1086,18 @@
 
       const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
 
-      /* Auto-Pause & Auto-Resume Detection */
+      /* Auto-Pause & Precision Timer Freeze Logic */
       if (filteredSpeed === 0) {
         zeroSpeedCount++;
         if (zeroSpeedCount >= 3 && rideState === 'RUNNING') {
           rideState = 'AUTO-PAUSED';
+          
+          // Freeze active timer interval
+          if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+          }
+
           document.getElementById('statusText').innerText = 'AUTO-PAUSED';
           document.getElementById('statusDot').classList.remove('active');
           document.getElementById('startBtn').classList.remove('active-start');
@@ -1092,6 +1107,13 @@
         zeroSpeedCount = 0;
         if (rideState === 'AUTO-PAUSED' && !isManualStopped) {
           rideState = 'RUNNING';
+
+          // Recalculate start time relative to stored elapsed time
+          startTime = Date.now() - elapsedTime;
+          if (!timerInterval) {
+            timerInterval = setInterval(updateTimer, 1000);
+          }
+
           document.getElementById('statusText').innerText = 'RECORDING';
           document.getElementById('statusDot').classList.add('active');
           document.getElementById('pauseBtn').classList.remove('active-pause');

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-menu-tabs-v1';
+const CACHE_NAME = 'horo-timer-freeze-v1';
 const ASSETS = [
   './',
   './index.html',
