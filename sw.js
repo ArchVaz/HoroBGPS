@@ -1,8 +1,9 @@
-const CACHE_NAME = 'horo-v15-speed-text-fix';
+const CACHE_NAME = 'horo-v16-roboto-condensed';
 const ASSETS = [
   './',
   './index.html',
   './logo.png',
+  'https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;0,800;1,700&display=swap',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
