@@ -743,6 +743,7 @@
 
     let totalDistanceMeters = 0;
     let maxSpeedMps = 0;
+    let smoothedSpeedMps = 0;
     let totalEleGain = 0;
     let currentGrade = 0;
     let lastPosition = null;
@@ -769,7 +770,6 @@
       document.getElementById('startBtn').onclick = startRide;
       document.getElementById('pauseBtn').onclick = pauseRide;
       
-      // Open Custom Reset Confirmation Dialog
       document.getElementById('resetBtn').onclick = promptResetConfirmation;
       document.getElementById('btnCancelReset').onclick = closeResetConfirmation;
       document.getElementById('btnConfirmReset').onclick = confirmAndExecuteReset;
@@ -801,6 +801,7 @@
       movingTimeSecs = 0;
       totalDistanceMeters = 0;
       maxSpeedMps = 0;
+      smoothedSpeedMps = 0;
       totalEleGain = 0;
       currentGrade = 0;
       lastPosition = null;
@@ -1069,7 +1070,8 @@
       const accuracy = pos.coords.accuracy || 0;
       const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
 
-      if (accuracy > 50) return;
+      // Filter 1: Ignore low-accuracy GPS fixes (>25 meters radius)
+      if (accuracy > 25) return;
 
       const latLng = [lat, lon];
 
@@ -1084,9 +1086,15 @@
         }
       }
 
-      const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
+      // Filter 2: Speed noise gate (ignore speeds below 0.22 m/s ~ 0.8 km/h)
+      let filteredSpeed = rawSpeed < 0.22 ? 0 : rawSpeed;
 
-      if (filteredSpeed === 0) {
+      // Filter 3: Apply exponential moving average (low-pass filter) to smooth speed spikes
+      smoothedSpeedMps = (smoothedSpeedMps * 0.6) + (filteredSpeed * 0.4);
+      if (smoothedSpeedMps < 0.22) smoothedSpeedMps = 0;
+
+      // Auto-Pause Engine
+      if (smoothedSpeedMps === 0) {
         zeroSpeedCount++;
         if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
           rideState = 'AUTO-PAUSED';
@@ -1114,12 +1122,14 @@
         }
       }
 
-      if (rideState === 'RUNNING' && filteredSpeed > 0) {
+      if (rideState === 'RUNNING' && smoothedSpeedMps > 0) {
         movingTimeSecs++;
 
         if (lastPosition) {
           const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
-          if (d > 1.0) {
+          
+          // Filter 4: Ignore movements under 3.0 meters to eliminate standing GPS drift
+          if (d >= 3.0) {
             totalDistanceMeters += d;
             if (isMapTileEnabled && routePolyline) routePolyline.addLatLng(latLng);
 
@@ -1130,17 +1140,18 @@
               if (Math.abs(currentGrade) > 35) currentGrade = 0;
             }
 
-            gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
+            gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
+            lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: smoothedSpeedMps };
           }
         } else {
-          gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
+          gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
+          lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: smoothedSpeedMps };
         }
 
-        if (filteredSpeed > maxSpeedMps) maxSpeedMps = filteredSpeed;
+        if (smoothedSpeedMps > maxSpeedMps) maxSpeedMps = smoothedSpeedMps;
       }
 
-      lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: filteredSpeed };
-      updateDisplay(lastPosition);
+      updateDisplay({ speed: (rideState === 'RUNNING' ? smoothedSpeedMps : 0), altitude: alt });
     }
 
     function updateDisplay(pos) {
