@@ -429,10 +429,10 @@
     }
 
     .speed-value {
-      font-size: 72px;
+      font-size: 88px;
       font-weight: 800;
-      line-height: 0.9;
-      letter-spacing: -2px;
+      line-height: 0.85;
+      letter-spacing: -3px;
     }
 
     body.map-disabled .primary-metric {
@@ -617,7 +617,7 @@
 
         <div class="toggle-list" id="reorderList">
           <div class="toggle-item" data-card="card-speed">
-            <span class="toggle-label">Current Speed</span>
+            <span class="toggle-label">Speed</span>
             <label class="switch"><input type="checkbox" id="chk-speed" checked><span class="slider"></span></label>
           </div>
           <div class="toggle-item" data-card="card-dist">
@@ -664,7 +664,7 @@
   <!-- Dashboard Container -->
   <div class="dashboard-container" id="dashboard">
     <div id="card-speed" class="card primary-metric">
-      <div class="metric-label">Current Speed</div>
+      <div class="metric-label">Speed</div>
       <div id="speedVal" class="speed-value">0.0</div>
       <div id="unitLabel" class="unit-label">KM/H</div>
     </div>
@@ -1070,7 +1070,6 @@
       const accuracy = pos.coords.accuracy || 0;
       const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
 
-      // Filter 1: Ignore low-accuracy GPS fixes (>25 meters radius)
       if (accuracy > 25) return;
 
       const latLng = [lat, lon];
@@ -1086,14 +1085,11 @@
         }
       }
 
-      // Filter 2: Speed noise gate (ignore speeds below 0.22 m/s ~ 0.8 km/h)
       let filteredSpeed = rawSpeed < 0.22 ? 0 : rawSpeed;
 
-      // Filter 3: Apply exponential moving average (low-pass filter) to smooth speed spikes
       smoothedSpeedMps = (smoothedSpeedMps * 0.6) + (filteredSpeed * 0.4);
       if (smoothedSpeedMps < 0.22) smoothedSpeedMps = 0;
 
-      // Auto-Pause Engine
       if (smoothedSpeedMps === 0) {
         zeroSpeedCount++;
         if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
@@ -1128,7 +1124,6 @@
         if (lastPosition) {
           const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
           
-          // Filter 4: Ignore movements under 3.0 meters to eliminate standing GPS drift
           if (d >= 3.0) {
             totalDistanceMeters += d;
             if (isMapTileEnabled && routePolyline) routePolyline.addLatLng(latLng);

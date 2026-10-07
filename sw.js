@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v14-gps-anti-drift';
+const CACHE_NAME = 'horo-v15-speed-text-fix';
 const ASSETS = [
   './',
   './index.html',
