@@ -3,27 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>放浪 Bike Computer</title>
+  <title>放浪 - GPS Bike Computer</title>
   
-  <!-- PWA & iOS Home Screen Settings -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="放浪">
-
-  <!-- Leaflet CSS & JS for Full Interactive GIS Map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root {
       --bg-black: #000000;
       --card-bg: #0c0c0c;
-      --card-border: #1a1a1a;
+      --card-border: #1f1f1f;
       --text-white: #ffffff;
       --text-dim: #666666;
       --accent-green: #30d158;
       --accent-red: #ff453a;
       --accent-orange: #ff9f0a;
+      --accent-blue: #0a84ff;
     }
 
     * {
@@ -42,7 +38,8 @@
       display: flex;
       flex-direction: column;
       padding: 12px;
-      gap: 10px;
+      gap: 12px;
+      padding-bottom: 90px;
     }
 
     .header {
@@ -54,11 +51,11 @@
 
     .logo-text {
       font-size: 28px;
-      font-weight: 300;
-      letter-spacing: 3px;
+      font-weight: 200;
+      letter-spacing: 4px;
       color: var(--text-white);
       line-height: 1;
-      opacity: 0.9;
+      opacity: 0.95;
     }
 
     .header-actions {
@@ -102,8 +99,9 @@
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       z-index: 9999;
       display: none;
       align-items: center;
@@ -118,25 +116,27 @@
     .modal-content {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
+      border-radius: 20px;
       width: 100%;
       max-width: 380px;
       max-height: 85vh;
       overflow-y: auto;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
       border-bottom: 1px solid var(--card-border);
       padding-bottom: 12px;
     }
 
     .modal-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 1.2px;
       color: var(--text-white);
@@ -150,10 +150,19 @@
       cursor: pointer;
     }
 
+    .settings-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
     .toggle-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .toggle-item {
@@ -162,8 +171,8 @@
       justify-content: space-between;
       padding: 10px 12px;
       background: #121212;
-      border-radius: 10px;
-      border: 1px solid #1f1f1f;
+      border-radius: 12px;
+      border: 1px solid #1c1c1c;
     }
 
     .toggle-label {
@@ -175,18 +184,20 @@
       display: flex;
       background: #000;
       border: 1px solid #222;
-      border-radius: 6px;
-      overflow: hidden;
+      border-radius: 8px;
+      padding: 2px;
     }
 
     .unit-opt {
-      padding: 6px 12px;
+      padding: 6px 14px;
       font-size: 11px;
       font-weight: 700;
       color: var(--text-dim);
       cursor: pointer;
       background: none;
       border: none;
+      border-radius: 6px;
+      transition: all 0.2s ease;
     }
 
     .unit-opt.active {
@@ -239,12 +250,12 @@
     .dashboard-container {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
     .grid-row {
       display: grid;
-      gap: 10px;
+      gap: 12px;
     }
 
     .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
@@ -254,8 +265,8 @@
     .card {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 12px;
+      border-radius: 16px;
+      padding: 14px;
     }
 
     .card.hidden {
@@ -264,7 +275,7 @@
 
     .primary-metric {
       text-align: center;
-      padding: 18px 12px;
+      padding: 24px 12px;
     }
 
     .metric-label {
@@ -277,28 +288,31 @@
     }
 
     .speed-value {
-      font-size: 82px;
+      font-size: 88px;
       font-weight: 800;
-      line-height: 1;
+      line-height: 0.95;
       letter-spacing: -3px;
+      font-variant-numeric: tabular-nums;
     }
 
     .unit-label {
       font-size: 13px;
       color: var(--text-dim);
-      font-weight: 600;
-      margin-top: 4px;
+      font-weight: 700;
+      margin-top: 6px;
+      letter-spacing: 1px;
     }
 
     .sub-metric {
       text-align: center;
-      padding: 10px 4px;
+      padding: 12px 6px;
     }
 
     .sub-value {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 700;
       margin-top: 2px;
+      font-variant-numeric: tabular-nums;
     }
 
     .sub-value span {
@@ -308,75 +322,70 @@
     }
 
     .time-display {
-      font-size: 36px;
+      font-size: 38px;
       font-weight: 800;
       letter-spacing: 1px;
       font-variant-numeric: tabular-nums;
       text-align: center;
     }
 
-    /* Fixed Explicit Map Container Dimensions */
-    #map {
-      width: 100%;
-      height: 200px;
-      min-height: 200px;
-      border-radius: 10px;
-      background: #000000;
-      z-index: 1;
-    }
-
     .canvas-box {
       width: 100%;
-      height: 120px;
-      background: #050505;
-      border-radius: 8px;
+      height: 180px;
+      background: #030303;
+      border-radius: 12px;
       display: block;
+      border: 1px solid #141414;
     }
 
-    /* Dark Mode Filter for Map Tiles */
-    .leaflet-tile {
-      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-    }
-
-    .controls-grid {
+    /* Floating Dock at Screen Bottom */
+    .controls-dock {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-      margin-top: auto;
+      gap: 10px;
+      width: calc(100% - 32px);
       max-width: 380px;
-      width: 100%;
-      margin-left: auto;
-      margin-right: auto;
+      z-index: 1000;
+      background: rgba(12, 12, 12, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 8px;
+      border-radius: 18px;
+      border: 1px solid var(--card-border);
     }
 
     .btn {
-      background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
+      background-color: #141414;
+      border: 1px solid #222222;
       color: var(--text-white);
       padding: 14px 0;
       font-size: 12px;
       font-weight: 800;
       letter-spacing: 1.2px;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
       text-align: center;
-      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+      transition: all 0.2s ease;
     }
 
     .btn:active {
-      background-color: #1a1a1a;
+      transform: scale(0.97);
     }
 
     .btn.active-start {
       border-color: var(--accent-green) !important;
       color: var(--accent-green) !important;
-      background-color: rgba(48, 209, 88, 0.1) !important;
+      background-color: rgba(48, 209, 88, 0.12) !important;
     }
 
     .btn.active-pause {
       border-color: var(--accent-orange) !important;
       color: var(--accent-orange) !important;
-      background-color: rgba(255, 159, 10, 0.1) !important;
+      background-color: rgba(255, 159, 10, 0.12) !important;
     }
   </style>
 </head>
@@ -389,26 +398,28 @@
         <div id="statusDot" class="status-dot"></div>
         <span id="statusText">READY</span>
       </div>
-      <button class="menu-btn" onclick="toggleMenu()">☰</button>
+      <button class="menu-btn" onclick="toggleMenu()" aria-label="Settings">☰</button>
     </div>
   </div>
 
   <div id="menuModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
-        <div class="modal-title">SETTINGS & DASHBOARD</div>
+        <div class="modal-title">CUSTOMIZE DASHBOARD</div>
         <button class="close-btn" onclick="toggleMenu()">✕</button>
       </div>
-      <div class="toggle-list">
-        
-        <div class="toggle-item">
-          <span class="toggle-label">Speed Units</span>
-          <div class="unit-selector">
-            <button id="btnKm" class="unit-opt active" onclick="setUnits('metric')">KM/H</button>
-            <button id="btnMi" class="unit-opt" onclick="setUnits('imperial')">MPH</button>
-          </div>
-        </div>
 
+      <div class="settings-section-title">Units & Preferences</div>
+      <div class="toggle-item">
+        <span class="toggle-label">Measurement Unit</span>
+        <div class="unit-selector">
+          <button id="btnKm" class="unit-opt active" onclick="setUnits('metric')">KM/H</button>
+          <button id="btnMi" class="unit-opt" onclick="setUnits('imperial')">MPH</button>
+        </div>
+      </div>
+
+      <div class="settings-section-title">Displayed Metrics</div>
+      <div class="toggle-list">
         <div class="toggle-item">
           <span class="toggle-label">Current Speed</span>
           <label class="switch"><input type="checkbox" id="chk-speed" checked onchange="updateLayout()"><span class="slider"></span></label>
@@ -439,10 +450,10 @@
         </div>
         <div class="toggle-item">
           <span class="toggle-label">Elevation Profile Chart</span>
-          <label class="switch"><input type="checkbox" id="chk-chart" onchange="updateLayout()"><span class="slider"></span></label>
+          <label class="switch"><input type="checkbox" id="chk-chart" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
         <div class="toggle-item">
-          <span class="toggle-label">GPS Map View</span>
+          <span class="toggle-label">Offline GPS Map Plot</span>
           <label class="switch"><input type="checkbox" id="chk-map" checked onchange="updateLayout()"><span class="slider"></span></label>
         </div>
       </div>
@@ -487,24 +498,24 @@
       <div id="timerVal" class="time-display">00:00:00</div>
     </div>
 
-    <div id="card-chart" class="card hidden">
+    <div id="card-chart" class="card">
       <div class="metric-label" style="margin-bottom: 8px;">Elevation Profile</div>
       <canvas id="eleCanvas" class="canvas-box"></canvas>
     </div>
 
-    <div id="card-map" class="card" style="padding: 4px;">
-      <div id="map"></div>
+    <div id="card-map" class="card">
+      <div class="metric-label" style="margin-bottom: 8px;">GPS Offline Canvas Map</div>
+      <canvas id="mapCanvas" class="canvas-box"></canvas>
     </div>
   </div>
 
-  <div class="controls-grid">
+  <div class="controls-dock">
     <button id="startBtn" class="btn" onclick="startRide()">START</button>
     <button id="pauseBtn" class="btn" onclick="pauseRide()">PAUSE</button>
     <button id="stopBtn" class="btn" onclick="stopRide()">STOP</button>
   </div>
 
   <script>
-    // Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(() => {
         document.getElementById('statusText').innerText = 'OFFLINE READY';
@@ -526,30 +537,35 @@
     let totalEleGain = 0;
     let lastPosition = null;
 
-    let eleHistory = [];
-    let map, routePolyline, userMarker;
+    // GPS Breadcrumbs & Elevation log
+    let gpsPath = []; // [{lat, lon, alt}]
+    let eleHistory = []; // [altitudeMeters]
 
     window.onload = () => {
-      loadLayoutPreferences();
-      initMap();
+      loadPreferences();
+      resizeCanvases();
+      drawMapCanvas();
+      drawElevationCanvas();
+      window.addEventListener('resize', () => {
+        resizeCanvases();
+        drawMapCanvas();
+        drawElevationCanvas();
+      });
     };
 
-    function initMap() {
-      if (typeof L === 'undefined') return;
-      
-      // Default view over general geographic region until GPS fix
-      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
-      
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-        maxZoom: 19,
-        crossOrigin: true
-      }).addTo(map);
+    function resizeCanvases() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      const eleCanvas = document.getElementById('eleCanvas');
 
-      routePolyline = L.polyline([], { color: '#30d158', weight: 4 }).addTo(map);
+      if (mapCanvas) {
+        mapCanvas.width = mapCanvas.clientWidth * window.devicePixelRatio || mapCanvas.clientWidth;
+        mapCanvas.height = mapCanvas.clientHeight * window.devicePixelRatio || mapCanvas.clientHeight;
+      }
 
-      setTimeout(() => {
-        if (map) map.invalidateSize();
-      }, 500);
+      if (eleCanvas) {
+        eleCanvas.width = eleCanvas.clientWidth * window.devicePixelRatio || eleCanvas.clientWidth;
+        eleCanvas.height = eleCanvas.clientHeight * window.devicePixelRatio || eleCanvas.clientHeight;
+      }
     }
 
     function toggleMenu() {
@@ -561,12 +577,15 @@
       document.getElementById('btnKm').classList.toggle('active', isMetric);
       document.getElementById('btnMi').classList.toggle('active', !isMetric);
       document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
+      
+      savePreferences();
       if (lastPosition) updateDisplay(lastPosition);
-      else stopRide();
+      else updateDisplayDefaults();
     }
 
     function updateLayout() {
       const prefs = {
+        metric: isMetric,
         speed: document.getElementById('chk-speed').checked,
         dist: document.getElementById('chk-dist').checked,
         avg: document.getElementById('chk-avg').checked,
@@ -578,16 +597,37 @@
         map: document.getElementById('chk-map').checked
       };
 
-      localStorage.setItem('horo_standalone_layout', JSON.stringify(prefs));
+      savePreferences(prefs);
       applyLayout(prefs);
     }
 
-    function loadLayoutPreferences() {
-      const saved = localStorage.getItem('horo_standalone_layout');
-      const prefs = saved ? JSON.parse(saved) : {
-        speed: true, dist: true, avg: true, max: true,
-        ele: true, alt: true, time: true, chart: false, map: true
+    function savePreferences(customPrefs) {
+      const prefs = customPrefs || {
+        metric: isMetric,
+        speed: document.getElementById('chk-speed').checked,
+        dist: document.getElementById('chk-dist').checked,
+        avg: document.getElementById('chk-avg').checked,
+        max: document.getElementById('chk-max').checked,
+        ele: document.getElementById('chk-ele').checked,
+        alt: document.getElementById('chk-alt').checked,
+        time: document.getElementById('chk-time').checked,
+        chart: document.getElementById('chk-chart').checked,
+        map: document.getElementById('chk-map').checked
       };
+      localStorage.setItem('horo_pwa_prefs', JSON.stringify(prefs));
+    }
+
+    function loadPreferences() {
+      const saved = localStorage.getItem('horo_pwa_prefs');
+      const prefs = saved ? JSON.parse(saved) : {
+        metric: true, speed: true, dist: true, avg: true, max: true,
+        ele: true, alt: true, time: true, chart: true, map: true
+      };
+
+      isMetric = prefs.metric !== false;
+      document.getElementById('btnKm').classList.toggle('active', isMetric);
+      document.getElementById('btnMi').classList.toggle('active', !isMetric);
+      document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
 
       document.getElementById('chk-speed').checked = prefs.speed;
       document.getElementById('chk-dist').checked = prefs.dist;
@@ -625,9 +665,11 @@
       if (visibleEle === 0) eleRow.classList.add('hidden');
       else eleRow.classList.remove('hidden');
 
-      if (p.map && map) {
-        setTimeout(() => map.invalidateSize(), 200);
-      }
+      setTimeout(() => {
+        resizeCanvases();
+        drawMapCanvas();
+        drawElevationCanvas();
+      }, 50);
     }
 
     function toggleCard(id, visible) {
@@ -698,8 +740,15 @@
       maxSpeedMps = 0;
       totalEleGain = 0;
       lastPosition = null;
+      gpsPath = [];
       eleHistory = [];
 
+      updateDisplayDefaults();
+      drawMapCanvas();
+      drawElevationCanvas();
+    }
+
+    function updateDisplayDefaults() {
       document.getElementById('timerVal').innerText = "00:00:00";
       document.getElementById('speedVal').innerText = "0.0";
       document.getElementById('distVal').innerHTML = `0.00 <span>${isMetric ? 'km' : 'mi'}</span>`;
@@ -707,8 +756,6 @@
       document.getElementById('maxSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
       document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
       document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
-
-      if (routePolyline) routePolyline.setLatLngs([]);
     }
 
     function handlePosition(pos) {
@@ -718,42 +765,41 @@
       const rawSpeed = pos.coords.speed || 0;
       const accuracy = pos.coords.accuracy || 0;
 
-      if (accuracy > 20) return;
+      // Filter low accuracy GPS fixes (accuracy worse than 25m)
+      if (accuracy > 25) return;
 
-      const latLng = [lat, lon];
-
-      if (map) {
-        if (!userMarker) {
-          userMarker = L.circleMarker(latLng, { radius: 6, color: '#30d158', fillColor: '#30d158', fillOpacity: 1 }).addTo(map);
-          map.setView(latLng, 16);
-          map.invalidateSize();
-        } else {
-          userMarker.setLatLng(latLng);
-          map.panTo(latLng);
-        }
-      }
-
-      const filteredSpeed = rawSpeed < 0.33 ? 0 : rawSpeed;
+      // Filter GPS drift noise when stationary
+      const filteredSpeed = rawSpeed < 0.4 ? 0 : rawSpeed;
       if (filteredSpeed > 0) movingTimeSecs++;
 
       if (lastPosition) {
         const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
 
+        // Minimum movement threshold (3 meters) to filter static GPS jitter
         if (d > 3.0 && filteredSpeed > 0) {
           totalDistanceMeters += d;
-          if (routePolyline) routePolyline.addLatLng(latLng);
+          gpsPath.push({ lat, lon });
 
           if (alt !== null && lastPosition.altitude !== null) {
             const eleDiff = alt - lastPosition.altitude;
-            if (eleDiff > 2.0) totalEleGain += eleDiff;
+            if (eleDiff > 1.8) totalEleGain += eleDiff;
           }
         }
+      } else {
+        gpsPath.push({ lat, lon });
+      }
+
+      if (alt !== null) {
+        eleHistory.push(alt);
+        if (eleHistory.length > 50) eleHistory.shift();
       }
 
       if (filteredSpeed > maxSpeedMps) maxSpeedMps = filteredSpeed;
 
       lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: filteredSpeed };
       updateDisplay(lastPosition);
+      drawMapCanvas();
+      drawElevationCanvas();
     }
 
     function updateDisplay(pos) {
@@ -765,14 +811,14 @@
       const avgSpeed = isMetric ? (avgSpeedMps * 3.6) : (avgSpeedMps * 2.23694);
       
       const eleGain = isMetric ? totalEleGain : totalEleGain * 3.28084;
-      const altitude = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : '--';
+      const altitude = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : null;
 
       document.getElementById('speedVal').innerText = currSpeed.toFixed(1);
       document.getElementById('distVal').innerHTML = `${distance.toFixed(2)} <span>${isMetric ? 'km' : 'mi'}</span>`;
       document.getElementById('avgSpeedVal').innerHTML = `${avgSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
       document.getElementById('maxSpeedVal').innerHTML = `${maxSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
       document.getElementById('eleGainVal').innerHTML = `${Math.round(eleGain)} <span>${isMetric ? 'm' : 'ft'}</span>`;
-      document.getElementById('altVal').innerHTML = `${altitude !== '--' ? Math.round(altitude) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
+      document.getElementById('altVal').innerHTML = `${altitude !== null ? Math.round(altitude) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
     }
 
     function updateTimer() {
@@ -801,6 +847,147 @@
 
     function handleError(err) {
       document.getElementById('statusText').innerText = 'SEARCHING GPS';
+    }
+
+    function drawMapCanvas() {
+      const canvas = document.getElementById('mapCanvas');
+      if (!canvas || canvas.clientWidth === 0) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Draw subtle background grid pattern
+      ctx.strokeStyle = '#121212';
+      ctx.lineWidth = 1;
+      const gridSize = 30 * (window.devicePixelRatio || 1);
+      for (let x = 0; x < w; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      if (gpsPath.length === 0) {
+        ctx.fillStyle = '#444';
+        ctx.font = `${11 * (window.devicePixelRatio || 1)}px -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('WAITING FOR GPS ROUTE DATA...', w / 2, h / 2);
+        return;
+      }
+
+      // Calculate latitude / longitude bounds
+      let minLat = gpsPath[0].lat, maxLat = gpsPath[0].lat;
+      let minLon = gpsPath[0].lon, maxLon = gpsPath[0].lon;
+
+      gpsPath.forEach(pt => {
+        if (pt.lat < minLat) minLat = pt.lat;
+        if (pt.lat > maxLat) maxLat = pt.lat;
+        if (pt.lon < minLon) minLon = pt.lon;
+        if (pt.lon > maxLon) maxLon = pt.lon;
+      });
+
+      // Add dynamic padding to map bounds
+      const latRange = Math.max((maxLat - minLat), 0.0005);
+      const lonRange = Math.max((maxLon - minLon), 0.0005);
+      const padding = 40 * (window.devicePixelRatio || 1);
+
+      const toScreenX = (lon) => padding + ((lon - minLon) / lonRange) * (w - padding * 2);
+      const toScreenY = (lat) => h - (padding + ((lat - minLat) / latRange) * (h - padding * 2));
+
+      // Draw GPS breadcrumb polyline
+      ctx.beginPath();
+      ctx.strokeStyle = '#30d158';
+      ctx.lineWidth = 4 * (window.devicePixelRatio || 1);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      gpsPath.forEach((pt, idx) => {
+        const x = toScreenX(pt.lon);
+        const y = toScreenY(pt.lat);
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Draw start point marker
+      const startPt = gpsPath[0];
+      ctx.fillStyle = '#0a84ff';
+      ctx.beginPath();
+      ctx.arc(toScreenX(startPt.lon), toScreenY(startPt.lat), 6 * (window.devicePixelRatio || 1), 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw current position pulse dot
+      const currPt = gpsPath[gpsPath.length - 1];
+      const cx = toScreenX(currPt.lon);
+      const cy = toScreenY(currPt.lat);
+
+      ctx.fillStyle = 'rgba(48, 209, 88, 0.25)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14 * (window.devicePixelRatio || 1), 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6 * (window.devicePixelRatio || 1), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawElevationCanvas() {
+      const canvas = document.getElementById('eleCanvas');
+      if (!canvas || canvas.clientWidth === 0) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (eleHistory.length < 2) {
+        ctx.fillStyle = '#444';
+        ctx.font = `${11 * (window.devicePixelRatio || 1)}px -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('RECORDING ELEVATION DATA...', w / 2, h / 2);
+        return;
+      }
+
+      let minAlt = Math.min(...eleHistory);
+      let maxAlt = Math.max(...eleHistory);
+      if (maxAlt === minAlt) {
+        maxAlt += 5;
+        minAlt -= 5;
+      }
+
+      const padding = 20 * (window.devicePixelRatio || 1);
+      const range = maxAlt - minAlt;
+
+      const getX = (i) => (i / (eleHistory.length - 1)) * (w - padding * 2) + padding;
+      const getY = (alt) => h - (padding + ((alt - minAlt) / range) * (h - padding * 2));
+
+      // Filled area under elevation chart
+      ctx.beginPath();
+      ctx.moveTo(getX(0), h - padding);
+      eleHistory.forEach((alt, i) => {
+        ctx.lineTo(getX(i), getY(alt));
+      });
+      ctx.lineTo(getX(eleHistory.length - 1), h - padding);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(48, 209, 88, 0.35)');
+      grad.addColorStop(1, 'rgba(48, 209, 88, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Elevation top line
+      ctx.beginPath();
+      ctx.strokeStyle = '#30d158';
+      ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
+      eleHistory.forEach((alt, i) => {
+        if (i === 0) ctx.moveTo(getX(i), getY(alt));
+        else ctx.lineTo(getX(i), getY(alt));
+      });
+      ctx.stroke();
     }
   </script>
 </body>

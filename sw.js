@@ -1,11 +1,10 @@
-const CACHE_NAME = 'horo-map-fix-v1';
+const CACHE_NAME = 'horo-offline-pwa-v2';
 
-// Pre-cache core app dependencies + Leaflet CSS/JS
+// Cache all core application assets for 100% offline access
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+  './sw.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -34,16 +33,12 @@ self.addEventListener('fetch', (event) => {
       if (cachedResponse) {
         return cachedResponse;
       }
-      return fetch(event.request).then((networkResponse) => {
-        // Cache street map tiles automatically on the fly
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+      return fetch(event.request).catch(() => {
+        // Fallback response if user is fully offline
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
         }
-        return networkResponse;
-      }).catch(() => cachedResponse);
+      });
     })
   );
 });
