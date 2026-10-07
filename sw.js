@@ -1,7 +1,8 @@
-const CACHE_NAME = 'horo-tile-persistence-v1';
+const CACHE_NAME = 'horo-logo-img-v1';
 const ASSETS = [
   './',
   './index.html',
+  './logo.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];

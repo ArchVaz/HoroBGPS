@@ -53,13 +53,11 @@
       padding: 4px 6px;
     }
 
-    .logo-kanji {
-      font-size: 26px;
-      font-weight: 200;
-      letter-spacing: 4px;
-      color: var(--text-white);
-      line-height: 1;
-      opacity: 0.95;
+    .logo-img {
+      height: 26px;
+      width: auto;
+      object-fit: contain;
+      display: block;
     }
 
     .header-actions {
@@ -545,7 +543,7 @@
 
   <!-- Header -->
   <div class="header">
-    <div class="logo-kanji">放浪</div>
+    <img src="logo.png" alt="放浪" class="logo-img">
     <div class="header-actions">
       <div class="status-badge">
         <div id="statusDot" class="status-dot"></div>
@@ -876,7 +874,6 @@
         }
       });
 
-      // Save Visibility State Preferences to LocalStorage
       localStorage.setItem('horo_card_visibility_prefs', JSON.stringify(visibilityPrefs));
 
       const statsRow = document.getElementById('row-stats');
