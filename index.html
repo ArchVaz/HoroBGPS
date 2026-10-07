@@ -469,7 +469,7 @@
       filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
 
-    /* Bottom Control Dock with Restored Borders */
+    /* Bottom Control Dock */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -862,6 +862,7 @@
 
     function updateLayout() {
       const toggleItems = document.querySelectorAll('#reorderList .toggle-item[data-card]');
+      const visibilityPrefs = {};
       
       toggleItems.forEach(item => {
         const cardId = item.dataset.card;
@@ -869,10 +870,14 @@
         const checkbox = item.querySelector('input[type="checkbox"]');
         
         if (cardEl && checkbox) {
+          visibilityPrefs[cardId] = checkbox.checked;
           if (checkbox.checked) cardEl.classList.remove('hidden');
           else cardEl.classList.add('hidden');
         }
       });
+
+      // Save Visibility State Preferences to LocalStorage
+      localStorage.setItem('horo_card_visibility_prefs', JSON.stringify(visibilityPrefs));
 
       const statsRow = document.getElementById('row-stats');
       const visibleStats = [
@@ -898,6 +903,17 @@
     }
 
     function loadLayoutPreferences() {
+      const savedPrefs = localStorage.getItem('horo_card_visibility_prefs');
+      if (savedPrefs) {
+        const visibilityPrefs = JSON.parse(savedPrefs);
+        Object.keys(visibilityPrefs).forEach(cardId => {
+          const toggleItem = document.querySelector(`.toggle-item[data-card="${cardId}"]`);
+          if (toggleItem) {
+            const checkbox = toggleItem.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = visibilityPrefs[cardId];
+          }
+        });
+      }
       updateLayout();
     }
 
