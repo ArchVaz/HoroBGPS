@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-grade-holdstop-v1';
+const CACHE_NAME = 'horo-grid-layout-v1';
 const ASSETS = [
   './',
   './index.html',
