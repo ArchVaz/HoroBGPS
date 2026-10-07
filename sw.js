@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-logo-img-v1';
+const CACHE_NAME = 'horo-sun-scheme-gpx-v1';
 const ASSETS = [
   './',
   './index.html',

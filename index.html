@@ -16,6 +16,7 @@
 
   <style>
     :root {
+      /* Default Original Scheme */
       --bg-black: #000000;
       --card-bg: #000000;
       --border-subtle: #1a1a1a;
@@ -24,6 +25,20 @@
       --accent-green: #30d158;
       --accent-red: #ff453a;
       --accent-orange: #ff9f0a;
+      --map-route-color: #30d158;
+    }
+
+    /* High-Contrast Direct Sunlight Solar Mode */
+    body.theme-sun {
+      --bg-black: #000000;
+      --card-bg: #000000;
+      --border-subtle: #333333;
+      --text-white: #ffffff;
+      --text-dim: #a0a0a0;       /* Lighter dim text for direct glare visibility */
+      --accent-green: #00ff66;   /* Peak 555nm human optical sensitivity green */
+      --accent-red: #ff3b30;
+      --accent-orange: #ffcc00;
+      --map-route-color: #00ff66;
     }
 
     * {
@@ -265,8 +280,8 @@
     }
 
     .unit-opt {
-      padding: 6px 12px;
-      font-size: 11px;
+      padding: 6px 10px;
+      font-size: 10px;
       font-weight: 700;
       color: var(--text-dim);
       cursor: pointer;
@@ -412,6 +427,11 @@
       font-weight: 800;
       line-height: 1;
       letter-spacing: -3px;
+      color: var(--text-white);
+    }
+
+    body.theme-sun .speed-value {
+      color: var(--accent-green);
     }
 
     .unit-label {
@@ -571,6 +591,15 @@
       <div id="tabContentTiles" class="tab-content active">
         <div class="toggle-list" id="reorderList">
           
+          <!-- Color Scheme Selector -->
+          <div class="toggle-item" data-id="theme-setting">
+            <span class="toggle-label">Color Scheme</span>
+            <div class="unit-selector">
+              <button id="btnThemeDark" class="unit-opt active" onclick="setTheme('dark')">ORIGINAL</button>
+              <button id="btnThemeSun" class="unit-opt" onclick="setTheme('sun')">SUN HIGH-CONTRAST</button>
+            </div>
+          </div>
+
           <div class="toggle-item" data-id="unit-setting">
             <span class="toggle-label">Speed Units</span>
             <div class="unit-selector">
@@ -762,6 +791,9 @@
     }
 
     let isMetric = true;
+    let currentTheme = 'dark'; // 'dark' or 'sun'
+    let isMapTileEnabled = true;
+
     let rideState = 'STOPPED'; 
     let isManualStopped = false;
     let watchId = null;
@@ -788,14 +820,39 @@
     let stopInterval = null;
 
     window.onload = () => {
+      loadThemePreference();
       loadLayoutPreferences();
       loadRideHistory();
-      initMap();
       setupHoldToStop();
     };
 
+    function setTheme(mode) {
+      currentTheme = mode;
+      localStorage.setItem('horo_theme_pref', mode);
+
+      if (mode === 'sun') {
+        document.body.classList.add('theme-sun');
+        document.getElementById('btnThemeDark').classList.remove('active');
+        document.getElementById('btnThemeSun').classList.add('active');
+        if (routePolyline) routePolyline.setStyle({ color: '#00ff66' });
+        if (userMarker) userMarker.setStyle({ color: '#00ff66', fillColor: '#00ff66' });
+      } else {
+        document.body.classList.remove('theme-sun');
+        document.getElementById('btnThemeSun').classList.remove('active');
+        document.getElementById('btnThemeDark').classList.add('active');
+        if (routePolyline) routePolyline.setStyle({ color: '#30d158' });
+        if (userMarker) userMarker.setStyle({ color: '#30d158', fillColor: '#30d158' });
+      }
+    }
+
+    function loadThemePreference() {
+      const savedTheme = localStorage.getItem('horo_theme_pref') || 'dark';
+      setTheme(savedTheme);
+    }
+
+    /* Dynamic Leaflet Map Lifecycle Management to conserve battery */
     function initMap() {
-      if (typeof L === 'undefined') return;
+      if (typeof L === 'undefined' || map) return;
       map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
       
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
@@ -803,11 +860,30 @@
         crossOrigin: true
       }).addTo(map);
 
-      routePolyline = L.polyline([], { color: '#30d158', weight: 4 }).addTo(map);
+      const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
+      routePolyline = L.polyline([], { color: trackColor, weight: 4 }).addTo(map);
+
+      // Re-populate polyline points if ride is already in progress
+      if (gpxTrackPoints.length > 0) {
+        const points = gpxTrackPoints.map(p => [p.lat, p.lon]);
+        routePolyline.setLatLngs(points);
+        const lastPt = gpxTrackPoints[gpxTrackPoints.length - 1];
+        userMarker = L.circleMarker([lastPt.lat, lastPt.lon], { radius: 6, color: trackColor, fillColor: trackColor, fillOpacity: 1 }).addTo(map);
+        map.setView([lastPt.lat, lastPt.lon], 16);
+      }
 
       setTimeout(() => {
         if (map) map.invalidateSize();
-      }, 500);
+      }, 300);
+    }
+
+    function destroyMap() {
+      if (map) {
+        map.remove();
+        map = null;
+        routePolyline = null;
+        userMarker = null;
+      }
     }
 
     function toggleMenu() {
@@ -875,6 +951,15 @@
       });
 
       localStorage.setItem('horo_card_visibility_prefs', JSON.stringify(visibilityPrefs));
+
+      // Handle map rendering activation state
+      const mapChk = document.getElementById('chk-map');
+      isMapTileEnabled = mapChk ? mapChk.checked : true;
+      if (isMapTileEnabled) {
+        initMap();
+      } else {
+        destroyMap();
+      }
 
       const statsRow = document.getElementById('row-stats');
       const visibleStats = [
@@ -1086,9 +1171,11 @@
 
       const latLng = [lat, lon];
 
-      if (map) {
+      // Only execute map render updates if tile is enabled
+      if (isMapTileEnabled && map) {
+        const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
         if (!userMarker) {
-          userMarker = L.circleMarker(latLng, { radius: 6, color: '#30d158', fillColor: '#30d158', fillOpacity: 1 }).addTo(map);
+          userMarker = L.circleMarker(latLng, { radius: 6, color: trackColor, fillColor: trackColor, fillOpacity: 1 }).addTo(map);
           map.setView(latLng, 16);
           map.invalidateSize();
         } else {
@@ -1139,8 +1226,7 @@
 
           if (d > 1.0) {
             totalDistanceMeters += d;
-            if (routePolyline) routePolyline.addLatLng(latLng);
-            gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, time: timestamp });
+            if (isMapTileEnabled && routePolyline) routePolyline.addLatLng(latLng);
 
             if (alt !== null && lastPosition.altitude !== null) {
               const eleDiff = alt - lastPosition.altitude;
@@ -1149,9 +1235,28 @@
               currentGrade = (eleDiff / d) * 100;
               if (Math.abs(currentGrade) > 35) currentGrade = 0;
             }
+
+            // Save telemetry point capturing distance, altitude, speed, grade
+            gpxTrackPoints.push({
+              lat,
+              lon,
+              alt,
+              speed: filteredSpeed,
+              distance: totalDistanceMeters,
+              grade: currentGrade,
+              time: timestamp
+            });
           }
         } else {
-          gpxTrackPoints.push({ lat, lon, alt, speed: filteredSpeed, time: timestamp });
+          gpxTrackPoints.push({
+            lat,
+            lon,
+            alt,
+            speed: filteredSpeed,
+            distance: totalDistanceMeters,
+            grade: currentGrade,
+            time: timestamp
+          });
         }
 
         if (filteredSpeed > maxSpeedMps) maxSpeedMps = filteredSpeed;
@@ -1257,14 +1362,22 @@
       if (ride) generateGPXDownload(ride.points, `HoroGPS_${ride.date}.gpx`);
     }
 
+    /* Full-telemetry GPX XML generator including elevation, speed, and distance */
     function generateGPXDownload(points, filename) {
       let gpxXml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-      gpxXml += `<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+      gpxXml += `<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\n`;
       gpxXml += `  <metadata><name>${filename}</name><time>${new Date().toISOString()}</time></metadata>\n`;
       gpxXml += `  <trk><name>放浪 Ride</name><trkseg>\n`;
 
       points.forEach(pt => {
-        gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}"><ele>${pt.alt.toFixed(1)}</ele><time>${pt.time}</time></trkpt>\n`;
+        gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}">\n`;
+        gpxXml += `        <ele>${(pt.alt || 0).toFixed(1)}</ele>\n`;
+        gpxXml += `        <time>${pt.time}</time>\n`;
+        gpxXml += `        <speed>${(pt.speed || 0).toFixed(2)}</speed>\n`;
+        if (pt.distance !== undefined) {
+          gpxXml += `        <extensions><gpxtpx:TrackPointExtension><gpxtpx:distance>${pt.distance.toFixed(1)}</gpxtpx:distance></gpxtpx:TrackPointExtension></extensions>\n`;
+        }
+        gpxXml += `      </trkpt>\n`;
       });
 
       gpxXml += `    </trkseg></trk></gpx>`;
