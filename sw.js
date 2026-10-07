@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v10-modal-persistence-fix';
+const CACHE_NAME = 'horo-v11-wakelock-fix';
 const ASSETS = [
   './',
   './index.html',

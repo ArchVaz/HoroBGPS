@@ -131,7 +131,7 @@
       opacity: 1;
     }
 
-    /* Modal Overlay & Fixed Height Structure to Prevent Jumping */
+    /* Modal Overlay & Fixed Height Structure */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -659,6 +659,7 @@
       }).catch(() => {});
     }
 
+    let wakeLock = null;
     let isMetric = true;
     let currentTheme = 'dark';
     let isMapTileEnabled = true;
@@ -709,6 +710,23 @@
       loadRideHistory();
       initMap();
       setupHoldToStop();
+      requestWakeLock();
+    });
+
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+        } catch (err) {
+          console.warn('Wake Lock error:', err);
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
     });
 
     function switchTab(tabName) {
@@ -869,6 +887,7 @@
     }
 
     function startRide() {
+      requestWakeLock();
       if (rideState === 'RUNNING') return;
 
       rideState = 'RUNNING';
