@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-pure-black-v1';
+const CACHE_NAME = 'horo-button-borders-v1';
 const ASSETS = [
   './',
   './index.html',
