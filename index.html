@@ -267,7 +267,7 @@
     let isMapTileEnabled = true;
 
     // Core State Variables
-    let rideState = 'STOPPED'; // 'STOPPED', 'RUNNING', 'PAUSED', 'AUTO-PAUSED'
+    let rideState = 'STOPPED'; 
     let watchId = null;
     let timerInterval = null;
 
@@ -429,7 +429,7 @@
       stopBtn.addEventListener('touchstart', startHold, { passive: false }); stopBtn.addEventListener('touchend', cancelHold);
     }
 
-    // --- Core GPS and Timer Logic ---
+    // --- RAW PERMISSIVE GPS & TIMER LOGIC ---
 
     function startRide() {
       requestWakeLock();
@@ -483,14 +483,14 @@
       if (rideState === 'RUNNING') {
         elapsedTime = Date.now() - startTime;
         
-        // Auto-pause check: Zero out speed if GPS goes entirely silent for 4+ seconds
-        if (Date.now() - lastPositionTime > 4000) {
+        // Auto-pause fix: If phone goes entirely to sleep and drops GPS for 5 seconds
+        if (Date.now() - lastPositionTime > 5000) {
           smoothedSpeedMps = 0;
         }
 
-        if (smoothedSpeedMps < 0.4) {
+        if (smoothedSpeedMps === 0) {
           zeroSpeedCount++;
-          if (zeroSpeedCount >= 3) {
+          if (zeroSpeedCount >= 4) { // Wait 4 secs before engaging auto-pause
             rideState = 'AUTO-PAUSED';
             document.getElementById('statusText').innerText = 'AUTO-PAUSED';
             document.getElementById('statusDot').classList.remove('active');
@@ -517,8 +517,11 @@
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
       const alt = pos.coords.altitude || (lastPosition ? lastPosition.altitude : null);
-      const rawSpeed = pos.coords.speed !== null ? pos.coords.speed : null;
+      const rawSpeed = pos.coords.speed;
       const accuracy = pos.coords.accuracy || 0;
+
+      // Only reject completely absurd positions (e.g. cell tower triangulation 100m+ away)
+      if (accuracy > 100) return;
 
       let currentSpeed = 0;
       let distSinceLast = 0;
@@ -526,60 +529,60 @@
       if (lastPosition) {
         distSinceLast = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
         
-        // Manual speed fallback if device reports null
-        if (rawSpeed === null) {
+        // Trust the device's native speed calculation first.
+        // If the browser reports null (like some Android WebViews do), fallback to math.
+        if (rawSpeed !== null && rawSpeed >= 0) {
+          currentSpeed = rawSpeed;
+        } else {
           const timeDiffSecs = (now - lastPosition.time) / 1000;
           if (timeDiffSecs > 0) currentSpeed = distSinceLast / timeDiffSecs;
-        } else {
-          currentSpeed = rawSpeed;
         }
       } else {
         currentSpeed = rawSpeed || 0;
       }
 
-      // Smooth inputs & cut micro-noise
-      if (currentSpeed < 0.3) currentSpeed = 0;
-      smoothedSpeedMps = (smoothedSpeedMps * 0.7) + (currentSpeed * 0.3);
-      if (smoothedSpeedMps < 0.3) smoothedSpeedMps = 0;
+      // Drop tiny phantom GPS drift when stationary
+      if (currentSpeed < 0.5) currentSpeed = 0;
+
+      // Revert to direct instantaneous speed (no laggy smoothing)
+      smoothedSpeedMps = currentSpeed;
 
       // Auto-Resume Handler
-      if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps >= 0.4) {
+      if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps > 0) {
         rideState = 'RUNNING';
         zeroSpeedCount = 0;
-        startTime = Date.now() - elapsedTime; // Adjusts start to exclude paused time
+        startTime = Date.now() - elapsedTime; 
         document.getElementById('statusText').innerText = 'RECORDING';
         document.getElementById('statusDot').classList.add('active');
         document.getElementById('pauseBtn').classList.remove('active-pause');
         document.getElementById('startBtn').classList.add('active-start');
       }
 
-      // Record Distance / Trail ONLY if accuracy is decent (prevents crazy GPS jumps)
-      if (accuracy <= 30 && rideState === 'RUNNING') {
-        if (lastPosition && distSinceLast >= 2.0) {
-          totalDistanceMeters += distSinceLast;
-          
-          if (alt !== null && lastPosition.altitude !== null) {
+      if (rideState === 'RUNNING') {
+        // Accumulate stats (ignore micro-jitter under 1 meter)
+        if (!lastPosition || distSinceLast >= 1.0) {
+          if (lastPosition) totalDistanceMeters += distSinceLast;
+
+          if (lastPosition && alt !== null && lastPosition.altitude !== null) {
             const eleDiff = alt - lastPosition.altitude;
-            if (eleDiff > 1.5) totalEleGain += eleDiff;
-            currentGrade = (eleDiff / distSinceLast) * 100;
+            if (eleDiff > 1.0) totalEleGain += eleDiff; // Only count upward movement
+            currentGrade = distSinceLast > 0 ? (eleDiff / distSinceLast) * 100 : 0;
             if (Math.abs(currentGrade) > 35) currentGrade = 0;
           }
 
           gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: currentGrade, time: new Date().toISOString() });
+          
           if (isMapTileEnabled && routePolyline) routePolyline.addLatLng([lat, lon]);
           lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
-        } else if (!lastPosition) {
-          lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
-          gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: 0, time: new Date().toISOString() });
         }
 
         if (smoothedSpeedMps > maxSpeedMps) maxSpeedMps = smoothedSpeedMps;
-      } else if (!lastPosition && accuracy <= 50) {
-        // Initial loose lock just to get started
+      } else if (!lastPosition) {
+        // Initial lock
         lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
       }
 
-      // ALWAYS Update UI and Map (Even if accuracy is > 30 so user sees the app hasn't frozen)
+      // ALWAYS update map & display immediately
       if (isMapTileEnabled && map) {
         if (!userMarker) {
           const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
