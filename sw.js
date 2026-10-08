@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v18-data-revert';
+const CACHE_NAME = 'horo-v19-day-night-anti-drift';
 const ASSETS = [
   './',
   './index.html',

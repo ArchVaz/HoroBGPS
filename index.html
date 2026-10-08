@@ -203,8 +203,20 @@
       </div>
       <div id="tabContentTiles" class="tab-content active">
         <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px;">
-          <div class="toggle-item"><span class="toggle-label">Color Scheme</span><div class="unit-selector"><button id="btnThemeDark" class="unit-opt active">ORIGINAL</button><button id="btnThemeSun" class="unit-opt">SUN</button></div></div>
-          <div class="toggle-item"><span class="toggle-label">Speed Units</span><div class="unit-selector"><button id="btnKm" class="unit-opt active">KM/H</button><button id="btnMi" class="unit-opt">MPH</button></div></div>
+          <div class="toggle-item">
+            <span class="toggle-label">Color Scheme</span>
+            <div class="unit-selector">
+              <button id="btnThemeDark" class="unit-opt active">NIGHT</button>
+              <button id="btnThemeSun" class="unit-opt">DAY</button>
+            </div>
+          </div>
+          <div class="toggle-item">
+            <span class="toggle-label">Speed Units</span>
+            <div class="unit-selector">
+              <button id="btnKm" class="unit-opt active">KM/H</button>
+              <button id="btnMi" class="unit-opt">MPH</button>
+            </div>
+          </div>
         </div>
         <div class="toggle-list" id="reorderList">
           <div class="toggle-item" data-card="card-speed"><span class="toggle-label">Speed</span><label class="switch"><input type="checkbox" id="chk-speed" checked><span class="slider"></span></label></div>
@@ -429,7 +441,7 @@
       stopBtn.addEventListener('touchstart', startHold, { passive: false }); stopBtn.addEventListener('touchend', cancelHold);
     }
 
-    // --- RAW PERMISSIVE GPS & TIMER LOGIC ---
+    // --- ANTI-DRIFT GPS & TIMER LOGIC ---
 
     function startRide() {
       requestWakeLock();
@@ -483,22 +495,20 @@
       if (rideState === 'RUNNING') {
         elapsedTime = Date.now() - startTime;
         
-        // Auto-pause fix: If phone goes entirely to sleep and drops GPS for 5 seconds
-        if (Date.now() - lastPositionTime > 5000) {
+        // If GPS signal drops or phone goes completely still for 4+ seconds
+        if (Date.now() - lastPositionTime > 4000) {
           smoothedSpeedMps = 0;
         }
 
         if (smoothedSpeedMps === 0) {
           zeroSpeedCount++;
-          if (zeroSpeedCount >= 4) { // Wait 4 secs before engaging auto-pause
+          if (zeroSpeedCount >= 3) { // Trigger Auto-Pause after 3 seconds of zero movement
             rideState = 'AUTO-PAUSED';
             document.getElementById('statusText').innerText = 'AUTO-PAUSED';
             document.getElementById('statusDot').classList.remove('active');
             document.getElementById('pauseBtn').classList.add('active-pause');
             document.getElementById('startBtn').classList.remove('active-start');
             updateDisplay({ speed: 0, altitude: lastPosition ? lastPosition.altitude : null });
-          } else {
-            movingTimeSecs++;
           }
         } else {
           zeroSpeedCount = 0;
@@ -520,8 +530,8 @@
       const rawSpeed = pos.coords.speed;
       const accuracy = pos.coords.accuracy || 0;
 
-      // Only reject completely absurd positions (e.g. cell tower triangulation 100m+ away)
-      if (accuracy > 100) return;
+      // Filter 1: Ignore wildly inaccurate GPS fixes (>20 meters radius)
+      if (accuracy > 20) return;
 
       let currentSpeed = 0;
       let distSinceLast = 0;
@@ -529,8 +539,7 @@
       if (lastPosition) {
         distSinceLast = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
         
-        // Trust the device's native speed calculation first.
-        // If the browser reports null (like some Android WebViews do), fallback to math.
+        // Calculate speed directly or use native speed
         if (rawSpeed !== null && rawSpeed >= 0) {
           currentSpeed = rawSpeed;
         } else {
@@ -541,14 +550,17 @@
         currentSpeed = rawSpeed || 0;
       }
 
-      // Drop tiny phantom GPS drift when stationary
-      if (currentSpeed < 0.5) currentSpeed = 0;
+      // Filter 2: Speed Gate (speeeds under 0.28 m/s ~ 1.0 km/h are zeroed out)
+      if (currentSpeed < 0.28) {
+        currentSpeed = 0;
+      }
 
-      // Revert to direct instantaneous speed (no laggy smoothing)
-      smoothedSpeedMps = currentSpeed;
+      // Filter 3: Low-pass moving average to eliminate sudden speed spikes
+      smoothedSpeedMps = (currentSpeed * 0.25) + (smoothedSpeedMps * 0.75);
+      if (smoothedSpeedMps < 0.28) smoothedSpeedMps = 0;
 
       // Auto-Resume Handler
-      if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps > 0) {
+      if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps >= 0.28) {
         rideState = 'RUNNING';
         zeroSpeedCount = 0;
         startTime = Date.now() - elapsedTime; 
@@ -559,14 +571,16 @@
       }
 
       if (rideState === 'RUNNING') {
-        // Accumulate stats (ignore micro-jitter under 1 meter)
-        if (!lastPosition || distSinceLast >= 1.0) {
-          if (lastPosition) totalDistanceMeters += distSinceLast;
+        // Filter 4: Movement Gate - Ignore movements smaller than 3.5m to stop standing drift
+        if (!lastPosition) {
+          lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
+        } else if (distSinceLast >= 3.5 && smoothedSpeedMps > 0) {
+          totalDistanceMeters += distSinceLast;
 
-          if (lastPosition && alt !== null && lastPosition.altitude !== null) {
+          if (alt !== null && lastPosition.altitude !== null) {
             const eleDiff = alt - lastPosition.altitude;
-            if (eleDiff > 1.0) totalEleGain += eleDiff; // Only count upward movement
-            currentGrade = distSinceLast > 0 ? (eleDiff / distSinceLast) * 100 : 0;
+            if (eleDiff > 1.5) totalEleGain += eleDiff;
+            currentGrade = (eleDiff / distSinceLast) * 100;
             if (Math.abs(currentGrade) > 35) currentGrade = 0;
           }
 
@@ -577,12 +591,9 @@
         }
 
         if (smoothedSpeedMps > maxSpeedMps) maxSpeedMps = smoothedSpeedMps;
-      } else if (!lastPosition) {
-        // Initial lock
-        lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
       }
 
-      // ALWAYS update map & display immediately
+      // Update map & display
       if (isMapTileEnabled && map) {
         if (!userMarker) {
           const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
