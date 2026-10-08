@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v16-roboto-condensed';
+const CACHE_NAME = 'horo-v17-data-fix';
 const ASSETS = [
   './',
   './index.html',

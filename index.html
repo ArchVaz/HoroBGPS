@@ -9,7 +9,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="放浪">
 
-  <!-- Fonts & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;0,800;1,700&display=swap" rel="stylesheet">
@@ -36,540 +35,138 @@
       --accent-orange: #ffcc00;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    html, body {
-      height: 100%;
-      height: 100dvh;
-      overflow: hidden;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    html, body { height: 100%; height: 100dvh; overflow: hidden; }
 
     body {
       background-color: var(--bg-black);
       color: var(--text-white);
       font-family: 'Roboto Condensed', -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-      display: flex;
-      flex-direction: column;
-      padding: 8px;
-      gap: 6px;
+      display: flex; flex-direction: column; padding: 8px; gap: 6px;
     }
 
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 2px 4px;
-      flex-shrink: 0;
-    }
-
-    .logo-img {
-      height: 22px;
-      width: auto;
-      object-fit: contain;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; flex-shrink: 0; }
+    .logo-img { height: 22px; width: auto; object-fit: contain; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
 
     .status-badge {
-      font-size: 11px;
-      letter-spacing: 1.2px;
-      color: var(--text-dim);
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      text-transform: uppercase;
+      font-size: 11px; letter-spacing: 1.2px; color: var(--text-dim); font-weight: 700;
+      display: flex; align-items: center; gap: 6px; text-transform: uppercase;
     }
 
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background-color: var(--text-dim);
-    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background-color: var(--text-dim); }
+    .status-dot.active { background-color: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
 
-    .status-dot.active {
-      background-color: var(--accent-green);
-      box-shadow: 0 0 8px var(--accent-green);
-    }
-
-    .menu-btn {
-      background: none;
-      border: none;
-      color: var(--text-white);
-      font-size: 20px;
-      cursor: pointer;
-      padding: 4px 8px;
-    }
+    .menu-btn { background: none; border: none; color: var(--text-white); font-size: 20px; cursor: pointer; padding: 4px 8px; }
 
     .toast-notification {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      background: #111111;
-      border: 1px solid var(--accent-green);
-      color: var(--accent-green);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      z-index: 10000;
-      opacity: 0;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-      pointer-events: none;
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+      background: #111111; border: 1px solid var(--accent-green); color: var(--accent-green);
+      padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+      z-index: 10000; opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; pointer-events: none;
     }
+    .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    .toast-notification.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    /* Modal Overlay & Fixed Height Structure */
     .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.92);
-      backdrop-filter: blur(8px);
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.92); backdrop-filter: blur(8px);
+      z-index: 9999; display: none; align-items: center; justify-content: center; padding: 16px;
     }
-
-    .modal-overlay.active {
-      display: flex !important;
-    }
+    .modal-overlay.active { display: flex !important; }
 
     .modal-content {
-      background: var(--bg-black);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 380px;
-      height: 480px;
-      max-height: 80vh;
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
+      background: var(--bg-black); border-radius: 16px; width: 100%; max-width: 380px;
+      height: 480px; max-height: 80vh; display: flex; flex-direction: column; padding: 16px;
     }
 
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      border-bottom: 1px solid var(--border-subtle);
-      padding-bottom: 8px;
-      flex-shrink: 0;
-    }
-
-    .modal-title {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 18px;
-      cursor: pointer;
-    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; flex-shrink: 0; }
+    .modal-title { font-size: 14px; font-weight: 700; letter-spacing: 1.2px; }
+    .close-btn { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; }
 
     .confirm-modal-content {
-      background: #0d0d0d;
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 320px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 12px;
+      background: #0d0d0d; border: 1px solid var(--border-subtle); border-radius: 16px; width: 100%; max-width: 320px; padding: 20px;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
     }
+    .confirm-title { font-size: 15px; font-weight: 800; letter-spacing: 1px; color: var(--accent-red); text-transform: uppercase; }
+    .confirm-desc { font-size: 13px; color: var(--text-dim); line-height: 1.4; }
+    .confirm-actions { display: flex; gap: 10px; width: 100%; margin-top: 8px; }
+    
+    .confirm-btn { flex: 1; padding: 12px 0; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1px solid var(--border-subtle); }
+    .confirm-btn.cancel { background: #181818; color: var(--text-white); }
+    .confirm-btn.danger { background: rgba(255, 69, 58, 0.15); color: var(--accent-red); border-color: rgba(255, 69, 58, 0.4); }
 
-    .confirm-title {
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      color: var(--accent-red);
-      text-transform: uppercase;
-    }
+    .menu-tabs { display: flex; background: #0a0a0a; border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 10px; flex-shrink: 0; }
+    .tab-btn { flex: 1; padding: 8px 0; background: none; border: none; color: var(--text-dim); font-size: 11px; font-weight: 700; cursor: pointer; }
+    .tab-btn.active { background: #181818; color: var(--text-white); }
 
-    .confirm-desc {
-      font-size: 13px;
-      color: var(--text-dim);
-      line-height: 1.4;
-    }
+    .tab-content { display: none; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; min-height: 0; }
+    .tab-content.active { display: flex; }
 
-    .confirm-actions {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-      margin-top: 8px;
-    }
+    .toggle-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #0a0a0a; border-radius: 8px; border: 1px solid var(--border-subtle); }
+    .toggle-label { font-size: 13px; font-weight: 600; }
 
-    .confirm-btn {
-      flex: 1;
-      padding: 12px 0;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      border: 1px solid var(--border-subtle);
-    }
+    .unit-selector { display: flex; background: #000; border: 1px solid var(--border-subtle); border-radius: 6px; }
+    .unit-opt { padding: 5px 8px; font-size: 10px; font-weight: 700; color: var(--text-dim); cursor: pointer; background: none; border: none; }
+    .unit-opt.active { background: #222; color: var(--text-white); }
 
-    .confirm-btn.cancel {
-      background: #181818;
-      color: var(--text-white);
-    }
-
-    .confirm-btn.danger {
-      background: rgba(255, 69, 58, 0.15);
-      color: var(--accent-red);
-      border-color: rgba(255, 69, 58, 0.4);
-    }
-
-    .menu-tabs {
-      display: flex;
-      background: #0a0a0a;
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      margin-bottom: 10px;
-      flex-shrink: 0;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 8px 0;
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .tab-btn.active {
-      background: #181818;
-      color: var(--text-white);
-    }
-
-    .tab-content {
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-      overflow-y: auto;
-      flex: 1;
-      min-height: 0;
-    }
-
-    .tab-content.active {
-      display: flex;
-    }
-
-    .toggle-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 10px;
-      background: #0a0a0a;
-      border-radius: 8px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .toggle-label {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .unit-selector {
-      display: flex;
-      background: #000;
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-    }
-
-    .unit-opt {
-      padding: 5px 8px;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-dim);
-      cursor: pointer;
-      background: none;
-      border: none;
-    }
-
-    .unit-opt.active {
-      background: #222;
-      color: var(--text-white);
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 38px;
-      height: 20px;
-    }
-
+    .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-
-    .slider {
-      position: absolute; cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #2c2c2e;
-      border-radius: 20px;
-      transition: .2s;
-    }
-
-    .slider:before {
-      position: absolute; content: "";
-      height: 14px; width: 14px; left: 3px; bottom: 3px;
-      background-color: white; border-radius: 50%; transition: .2s;
-    }
-
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2c2c2e; border-radius: 20px; transition: .2s; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .2s; }
     input:checked + .slider { background-color: var(--accent-green); }
     input:checked + .slider:before { transform: translateX(18px); }
 
-    .history-item {
-      background: #0a0a0a;
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .history-item { background: #0a0a0a; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .history-date { font-size: 11px; color: var(--text-dim); font-weight: 700; margin-bottom: 2px; }
+    .history-stats { font-size: 13px; font-weight: 700; }
+    .history-actions { display: flex; gap: 6px; }
+    .history-btn { background: #181818; border: 1px solid var(--border-subtle); color: var(--text-white); padding: 5px 8px; font-size: 10px; font-weight: 700; border-radius: 4px; cursor: pointer; }
+    .history-btn.gpx-btn { color: var(--accent-green); border-color: rgba(48, 209, 88, 0.3); }
 
-    .history-date {
-      font-size: 11px;
-      color: var(--text-dim);
-      font-weight: 700;
-      margin-bottom: 2px;
-    }
-
-    .history-stats {
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .history-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .history-btn {
-      background: #181818;
-      border: 1px solid var(--border-subtle);
-      color: var(--text-white);
-      padding: 5px 8px;
-      font-size: 10px;
-      font-weight: 700;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .history-btn.gpx-btn {
-      color: var(--accent-green);
-      border-color: rgba(48, 209, 88, 0.3);
-    }
-
-    /* Main Responsive Layout */
-    .dashboard-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-height: 0;
-    }
-
-    .grid-row {
-      display: grid;
-      gap: 6px;
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-    }
-
+    .dashboard-container { flex: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+    .grid-row { display: grid; gap: 6px; width: 100%; flex: 1; min-height: 0; }
     .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
     .grid-2 { grid-template-columns: 1fr 1fr; }
     .grid-1 { grid-template-columns: 1fr; }
 
-    .card {
-      background-color: var(--card-bg);
-      border-radius: 10px;
-      padding: 6px 8px;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 0;
-    }
-
+    .card { background-color: var(--card-bg); border-radius: 10px; padding: 6px 8px; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 0; }
     .card.hidden { display: none !important; }
 
-    .primary-metric {
-      flex: 1.4;
-      max-height: 25vh;
-      min-height: 95px;
-      padding: 4px 8px;
-      justify-content: center;
-      transition: max-height 0.2s ease, flex 0.2s ease;
-    }
-
-    /* Enlarged Speed typography for high visibility */
-    .speed-value {
-      font-size: 110px;
-      font-weight: 800;
-      line-height: 0.82;
-      letter-spacing: -3px;
-    }
-
-    body.map-disabled .primary-metric {
-      flex: 2.2;
-      max-height: 35vh;
-    }
-
-    body.map-disabled .speed-value {
-      font-size: 135px;
-    }
-
+    .primary-metric { flex: 1.4; max-height: 25vh; min-height: 95px; padding: 4px 8px; justify-content: center; transition: max-height 0.2s ease, flex 0.2s ease; }
+    
+    .speed-value { font-size: 110px; font-weight: 800; line-height: 0.82; letter-spacing: -3px; }
+    body.map-disabled .primary-metric { flex: 2.2; max-height: 35vh; }
+    body.map-disabled .speed-value { font-size: 135px; }
     body.theme-sun .speed-value { color: var(--accent-green); }
 
-    .metric-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-bottom: 2px;
-    }
+    .metric-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px; }
+    .unit-label { font-size: 12px; color: var(--text-dim); font-weight: 700; margin-top: 1px; }
 
-    .unit-label {
-      font-size: 12px;
-      color: var(--text-dim);
-      font-weight: 700;
-      margin-top: 1px;
-    }
+    .sub-metric { text-align: center; padding: 4px 2px; flex: 1; }
+    .sub-value { font-size: 20px; font-weight: 700; line-height: 1.1; }
+    .sub-value span { font-size: 11px; color: var(--text-dim); }
 
-    .sub-metric {
-      text-align: center;
-      padding: 4px 2px;
-      flex: 1;
-    }
+    .card-time-container { flex: 0.8; min-height: 48px; }
+    .time-display { font-size: 28px; font-weight: 800; text-align: center; line-height: 1; }
 
-    .sub-value {
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1.1;
-    }
+    #card-map { flex: 1.5; min-height: 100px; padding: 2px; }
+    #map { width: 100%; height: 100%; border-radius: 8px; background: #000000; }
+    .leaflet-tile { filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7); }
 
-    .sub-value span {
-      font-size: 11px;
-      color: var(--text-dim);
-    }
-
-    .card-time-container {
-      flex: 0.8;
-      min-height: 48px;
-    }
-
-    .time-display {
-      font-size: 28px;
-      font-weight: 800;
-      text-align: center;
-      line-height: 1;
-    }
-
-    #card-map {
-      flex: 1.5;
-      min-height: 100px;
-      padding: 2px;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-      border-radius: 8px;
-      background: #000000;
-    }
-
-    .leaflet-tile {
-      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-    }
-
-    .controls-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-      gap: 6px;
-      max-width: 400px;
-      width: 100%;
-      margin: 0 auto;
-      flex-shrink: 0;
-    }
-
-    .btn {
-      position: relative;
-      background-color: #0c0c0c;
-      border: 1px solid var(--border-subtle);
-      color: var(--text-white);
-      padding: 12px 0;
-      font-size: 11px;
-      font-weight: 800;
-      border-radius: 8px;
-      cursor: pointer;
-      text-align: center;
-      overflow: hidden;
-    }
-
-    .btn.active-start {
-      border-color: var(--accent-green) !important;
-      color: var(--accent-green) !important;
-      background-color: rgba(48, 209, 88, 0.1) !important;
-    }
-
-    .btn.active-pause {
-      border-color: var(--accent-orange) !important;
-      color: var(--accent-orange) !important;
-      background-color: rgba(255, 159, 10, 0.1) !important;
-    }
-
+    .controls-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; max-width: 400px; width: 100%; margin: 0 auto; flex-shrink: 0; }
+    .btn { position: relative; background-color: #0c0c0c; border: 1px solid var(--border-subtle); color: var(--text-white); padding: 12px 0; font-size: 11px; font-weight: 800; border-radius: 8px; cursor: pointer; text-align: center; overflow: hidden; }
+    
+    .btn.active-start { border-color: var(--accent-green) !important; color: var(--accent-green) !important; background-color: rgba(48, 209, 88, 0.1) !important; }
+    .btn.active-pause { border-color: var(--accent-orange) !important; color: var(--accent-orange) !important; background-color: rgba(255, 159, 10, 0.1) !important; }
     .btn-reset { border-color: #2a1a1a; color: var(--accent-red); }
 
-    .btn-stop .fill-overlay {
-      position: absolute;
-      top: 0; left: 0; bottom: 0; width: 0%;
-      background: rgba(255, 69, 58, 0.85);
-      z-index: 1;
-      pointer-events: none;
-      transition: width 0.05s linear;
-    }
-
+    .btn-stop .fill-overlay { position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: rgba(255, 69, 58, 0.85); z-index: 1; pointer-events: none; transition: width 0.05s linear; }
     .btn-stop .btn-text { position: relative; z-index: 2; }
   </style>
 </head>
 <body>
 
-  <!-- Toast Notification Overlay -->
+  <!-- Overlays -->
   <div id="toast" class="toast-notification">Ride Saved</div>
-
-  <!-- Reset Confirmation Modal Overlay -->
   <div id="resetConfirmModal" class="modal-overlay">
     <div class="confirm-modal-content">
       <div class="confirm-title">Reset Ride Data?</div>
@@ -593,148 +190,75 @@
     </div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Menu Modal -->
   <div id="menuModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">MENU</div>
         <button class="close-btn" id="menuCloseBtn">✕</button>
       </div>
-
       <div class="menu-tabs">
         <button id="tabBtnTiles" class="tab-btn active">TILES</button>
         <button id="tabBtnHistory" class="tab-btn">HISTORY</button>
       </div>
-
       <div id="tabContentTiles" class="tab-content active">
         <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px;">
-          <div class="toggle-item">
-            <span class="toggle-label">Color Scheme</span>
-            <div class="unit-selector">
-              <button id="btnThemeDark" class="unit-opt active">ORIGINAL</button>
-              <button id="btnThemeSun" class="unit-opt">SUN HIGH-CONTRAST</button>
-            </div>
-          </div>
-
-          <div class="toggle-item">
-            <span class="toggle-label">Speed Units</span>
-            <div class="unit-selector">
-              <button id="btnKm" class="unit-opt active">KM/H</button>
-              <button id="btnMi" class="unit-opt">MPH</button>
-            </div>
-          </div>
+          <div class="toggle-item"><span class="toggle-label">Color Scheme</span><div class="unit-selector"><button id="btnThemeDark" class="unit-opt active">ORIGINAL</button><button id="btnThemeSun" class="unit-opt">SUN</button></div></div>
+          <div class="toggle-item"><span class="toggle-label">Speed Units</span><div class="unit-selector"><button id="btnKm" class="unit-opt active">KM/H</button><button id="btnMi" class="unit-opt">MPH</button></div></div>
         </div>
-
         <div class="toggle-list" id="reorderList">
-          <div class="toggle-item" data-card="card-speed">
-            <span class="toggle-label">Speed</span>
-            <label class="switch"><input type="checkbox" id="chk-speed" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-dist">
-            <span class="toggle-label">Distance</span>
-            <label class="switch"><input type="checkbox" id="chk-dist" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-avg">
-            <span class="toggle-label">Average Speed</span>
-            <label class="switch"><input type="checkbox" id="chk-avg" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-max">
-            <span class="toggle-label">Max Speed</span>
-            <label class="switch"><input type="checkbox" id="chk-max" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-grade">
-            <span class="toggle-label">Inclination Grade (%)</span>
-            <label class="switch"><input type="checkbox" id="chk-grade" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-ele">
-            <span class="toggle-label">Elevation Gain</span>
-            <label class="switch"><input type="checkbox" id="chk-ele" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-alt">
-            <span class="toggle-label">Current Altitude</span>
-            <label class="switch"><input type="checkbox" id="chk-alt" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-time">
-            <span class="toggle-label">Elapsed Time</span>
-            <label class="switch"><input type="checkbox" id="chk-time" checked><span class="slider"></span></label>
-          </div>
-          <div class="toggle-item" data-card="card-map">
-            <span class="toggle-label">GPS Map View</span>
-            <label class="switch"><input type="checkbox" id="chk-map" checked><span class="slider"></span></label>
-          </div>
+          <div class="toggle-item" data-card="card-speed"><span class="toggle-label">Speed</span><label class="switch"><input type="checkbox" id="chk-speed" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-dist"><span class="toggle-label">Distance</span><label class="switch"><input type="checkbox" id="chk-dist" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-avg"><span class="toggle-label">Average Speed</span><label class="switch"><input type="checkbox" id="chk-avg" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-max"><span class="toggle-label">Max Speed</span><label class="switch"><input type="checkbox" id="chk-max" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-grade"><span class="toggle-label">Inclination Grade (%)</span><label class="switch"><input type="checkbox" id="chk-grade" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-ele"><span class="toggle-label">Elevation Gain</span><label class="switch"><input type="checkbox" id="chk-ele" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-alt"><span class="toggle-label">Current Altitude</span><label class="switch"><input type="checkbox" id="chk-alt" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-time"><span class="toggle-label">Elapsed Time</span><label class="switch"><input type="checkbox" id="chk-time" checked><span class="slider"></span></label></div>
+          <div class="toggle-item" data-card="card-map"><span class="toggle-label">GPS Map View</span><label class="switch"><input type="checkbox" id="chk-map" checked><span class="slider"></span></label></div>
         </div>
       </div>
-
       <div id="tabContentHistory" class="tab-content">
         <div id="historyContainer" style="display: flex; flex-direction: column; gap: 6px;"></div>
       </div>
     </div>
   </div>
 
-  <!-- Dashboard Container -->
+  <!-- Dashboard -->
   <div class="dashboard-container" id="dashboard">
     <div id="card-speed" class="card primary-metric">
       <div class="metric-label">Speed</div>
       <div id="speedVal" class="speed-value">0.0</div>
       <div id="unitLabel" class="unit-label">KM/H</div>
     </div>
-
     <div id="row-stats" class="grid-row grid-3">
-      <div id="card-dist" class="card sub-metric">
-        <div class="metric-label">Distance</div>
-        <div id="distVal" class="sub-value">0.00 <span>km</span></div>
-      </div>
-      <div id="card-avg" class="card sub-metric">
-        <div class="metric-label">Avg Speed</div>
-        <div id="avgSpeedVal" class="sub-value">0.0 <span>km/h</span></div>
-      </div>
-      <div id="card-max" class="card sub-metric">
-        <div class="metric-label">Max Speed</div>
-        <div id="maxSpeedVal" class="sub-value">0.0 <span>km/h</span></div>
-      </div>
+      <div id="card-dist" class="card sub-metric"><div class="metric-label">Distance</div><div id="distVal" class="sub-value">0.00 <span>km</span></div></div>
+      <div id="card-avg" class="card sub-metric"><div class="metric-label">Avg Speed</div><div id="avgSpeedVal" class="sub-value">0.0 <span>km/h</span></div></div>
+      <div id="card-max" class="card sub-metric"><div class="metric-label">Max Speed</div><div id="maxSpeedVal" class="sub-value">0.0 <span>km/h</span></div></div>
     </div>
-
     <div id="row-elevation" class="grid-row grid-3">
-      <div id="card-grade" class="card sub-metric">
-        <div class="metric-label">Grade</div>
-        <div id="gradeVal" class="sub-value">0.0 <span>%</span></div>
-      </div>
-      <div id="card-ele" class="card sub-metric">
-        <div class="metric-label">Elevation</div>
-        <div id="eleGainVal" class="sub-value">0 <span>m</span></div>
-      </div>
-      <div id="card-alt" class="card sub-metric">
-        <div class="metric-label">Altitude</div>
-        <div id="altVal" class="sub-value">-- <span>m</span></div>
-      </div>
+      <div id="card-grade" class="card sub-metric"><div class="metric-label">Grade</div><div id="gradeVal" class="sub-value">0.0 <span>%</span></div></div>
+      <div id="card-ele" class="card sub-metric"><div class="metric-label">Elevation</div><div id="eleGainVal" class="sub-value">0 <span>m</span></div></div>
+      <div id="card-alt" class="card sub-metric"><div class="metric-label">Altitude</div><div id="altVal" class="sub-value">-- <span>m</span></div></div>
     </div>
-
     <div id="card-time" class="card sub-metric card-time-container">
       <div class="metric-label">Elapsed Time</div>
       <div id="timerVal" class="time-display">00:00:00</div>
     </div>
-
-    <div id="card-map" class="card">
-      <div id="map"></div>
-    </div>
+    <div id="card-map" class="card"><div id="map"></div></div>
   </div>
 
-  <!-- Bottom Control Dock -->
+  <!-- Controls -->
   <div class="controls-grid">
     <button id="startBtn" class="btn">START</button>
     <button id="pauseBtn" class="btn">PAUSE</button>
-    <button id="stopBtn" class="btn btn-stop">
-      <div id="stopFill" class="fill-overlay"></div>
-      <span class="btn-text">STOP</span>
-    </button>
+    <button id="stopBtn" class="btn btn-stop"><div id="stopFill" class="fill-overlay"></div><span class="btn-text">STOP</span></button>
     <button id="resetBtn" class="btn btn-reset">RESET</button>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then((reg) => {
-        reg.update();
-      }).catch(() => {});
+      navigator.serviceWorker.register('sw.js').then((reg) => reg.update()).catch(() => {});
     }
 
     let wakeLock = null;
@@ -742,14 +266,16 @@
     let currentTheme = 'dark';
     let isMapTileEnabled = true;
 
-    let rideState = 'STOPPED'; 
-    let isManualStopped = false;
+    // Core State Variables
+    let rideState = 'STOPPED'; // 'STOPPED', 'RUNNING', 'PAUSED', 'AUTO-PAUSED'
     let watchId = null;
+    let timerInterval = null;
 
     let startTime = 0;
     let elapsedTime = 0;
     let movingTimeSecs = 0;
-    let timerInterval = null;
+    let lastPositionTime = 0;
+    let zeroSpeedCount = 0;
 
     let totalDistanceMeters = 0;
     let maxSpeedMps = 0;
@@ -757,7 +283,6 @@
     let totalEleGain = 0;
     let currentGrade = 0;
     let lastPosition = null;
-    let zeroSpeedCount = 0;
 
     let gpxTrackPoints = [];
     let rideHistory = [];
@@ -767,25 +292,21 @@
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('menuToggleBtn').onclick = () => document.getElementById('menuModal').classList.add('active');
       document.getElementById('menuCloseBtn').onclick = () => document.getElementById('menuModal').classList.remove('active');
-      
       document.getElementById('tabBtnTiles').onclick = () => switchTab('tiles');
       document.getElementById('tabBtnHistory').onclick = () => switchTab('history');
-
+      
       document.getElementById('btnThemeDark').onclick = () => setTheme('dark');
       document.getElementById('btnThemeSun').onclick = () => setTheme('sun');
-      
       document.getElementById('btnKm').onclick = () => setUnits('metric');
       document.getElementById('btnMi').onclick = () => setUnits('imperial');
 
       document.getElementById('startBtn').onclick = startRide;
       document.getElementById('pauseBtn').onclick = pauseRide;
-      
-      document.getElementById('resetBtn').onclick = promptResetConfirmation;
-      document.getElementById('btnCancelReset').onclick = closeResetConfirmation;
+      document.getElementById('resetBtn').onclick = () => document.getElementById('resetConfirmModal').classList.add('active');
+      document.getElementById('btnCancelReset').onclick = () => document.getElementById('resetConfirmModal').classList.remove('active');
       document.getElementById('btnConfirmReset').onclick = confirmAndExecuteReset;
 
-      const switches = document.querySelectorAll('#reorderList input[type="checkbox"]');
-      switches.forEach(sw => sw.onchange = updateLayout);
+      document.querySelectorAll('#reorderList input[type="checkbox"]').forEach(sw => sw.onchange = updateLayout);
 
       loadThemePreference();
       loadLayoutPreferences();
@@ -795,73 +316,26 @@
       requestWakeLock();
     });
 
-    function promptResetConfirmation() {
-      document.getElementById('resetConfirmModal').classList.add('active');
-    }
-
-    function closeResetConfirmation() {
-      document.getElementById('resetConfirmModal').classList.remove('active');
-    }
-
-    function confirmAndExecuteReset() {
-      closeResetConfirmation();
-      executeStopRide();
-
-      elapsedTime = 0;
-      movingTimeSecs = 0;
-      totalDistanceMeters = 0;
-      maxSpeedMps = 0;
-      smoothedSpeedMps = 0;
-      totalEleGain = 0;
-      currentGrade = 0;
-      lastPosition = null;
-      gpxTrackPoints = [];
-
-      document.getElementById('statusText').innerText = 'READY';
-      document.getElementById('timerVal').innerText = "00:00:00";
-      document.getElementById('speedVal').innerText = "0.0";
-      document.getElementById('distVal').innerHTML = `0.00 <span>${isMetric ? 'km' : 'mi'}</span>`;
-      document.getElementById('avgSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-      document.getElementById('maxSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-      document.getElementById('gradeVal').innerHTML = `0.0 <span>%</span>`;
-      document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
-      document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
-
-      if (routePolyline) routePolyline.setLatLngs([]);
-    }
-
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
-        try {
-          wakeLock = await navigator.wakeLock.request('screen');
-        } catch (err) {
-          console.warn('Wake Lock error:', err);
-        }
+        try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
       }
     }
-
     document.addEventListener('visibilitychange', () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') {
-        requestWakeLock();
-      }
+      if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock();
     });
 
     function switchTab(tabName) {
-      const btnTiles = document.getElementById('tabBtnTiles');
-      const btnHistory = document.getElementById('tabBtnHistory');
-      const contentTiles = document.getElementById('tabContentTiles');
-      const contentHistory = document.getElementById('tabContentHistory');
-
       if (tabName === 'tiles') {
-        btnTiles.classList.add('active');
-        btnHistory.classList.remove('active');
-        contentTiles.classList.add('active');
-        contentHistory.classList.remove('active');
+        document.getElementById('tabBtnTiles').classList.add('active');
+        document.getElementById('tabBtnHistory').classList.remove('active');
+        document.getElementById('tabContentTiles').classList.add('active');
+        document.getElementById('tabContentHistory').classList.remove('active');
       } else {
-        btnHistory.classList.add('active');
-        btnTiles.classList.remove('active');
-        contentHistory.classList.add('active');
-        contentTiles.classList.remove('active');
+        document.getElementById('tabBtnHistory').classList.add('active');
+        document.getElementById('tabBtnTiles').classList.remove('active');
+        document.getElementById('tabContentHistory').classList.add('active');
+        document.getElementById('tabContentTiles').classList.remove('active');
         renderRideHistory();
       }
     }
@@ -869,7 +343,6 @@
     function setTheme(mode) {
       currentTheme = mode;
       localStorage.setItem('horo_theme_pref', mode);
-
       if (mode === 'sun') {
         document.body.classList.add('theme-sun');
         document.getElementById('btnThemeDark').classList.remove('active');
@@ -885,80 +358,49 @@
       }
     }
 
-    function loadThemePreference() {
-      const savedTheme = localStorage.getItem('horo_theme_pref') || 'dark';
-      setTheme(savedTheme);
-    }
+    function loadThemePreference() { setTheme(localStorage.getItem('horo_theme_pref') || 'dark'); }
 
     function setUnits(type) {
       isMetric = (type === 'metric');
       document.getElementById('btnKm').classList.toggle('active', isMetric);
       document.getElementById('btnMi').classList.toggle('active', !isMetric);
       document.getElementById('unitLabel').innerText = isMetric ? 'KM/H' : 'MPH';
-      if (lastPosition) updateDisplay(lastPosition);
+      updateDisplay({ speed: smoothedSpeedMps, altitude: lastPosition ? lastPosition.altitude : null });
     }
 
     function updateLayout() {
-      const toggleItems = document.querySelectorAll('#reorderList .toggle-item[data-card]');
       const visibilityPrefs = {};
-
-      toggleItems.forEach(item => {
-        const cardId = item.dataset.card;
-        const cardEl = document.getElementById(cardId);
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (cardEl && checkbox) {
-          visibilityPrefs[cardId] = checkbox.checked;
-          if (checkbox.checked) cardEl.classList.remove('hidden');
-          else cardEl.classList.add('hidden');
+      document.querySelectorAll('#reorderList .toggle-item[data-card]').forEach(item => {
+        const cardId = item.dataset.card, cardEl = document.getElementById(cardId), chk = item.querySelector('input');
+        if (cardEl && chk) {
+          visibilityPrefs[cardId] = chk.checked;
+          chk.checked ? cardEl.classList.remove('hidden') : cardEl.classList.add('hidden');
         }
       });
-
       localStorage.setItem('horo_card_visibility_prefs', JSON.stringify(visibilityPrefs));
 
       const statsRow = document.getElementById('row-stats');
-      const visibleStats = [
-        document.getElementById('chk-dist').checked,
-        document.getElementById('chk-avg').checked,
-        document.getElementById('chk-max').checked
-      ].filter(Boolean).length;
-      statsRow.className = `grid-row grid-${visibleStats || 1}`;
-      if (visibleStats === 0) statsRow.classList.add('hidden');
-      else statsRow.classList.remove('hidden');
+      const vStats = [document.getElementById('chk-dist').checked, document.getElementById('chk-avg').checked, document.getElementById('chk-max').checked].filter(Boolean).length;
+      statsRow.className = `grid-row grid-${vStats || 1}`;
+      vStats === 0 ? statsRow.classList.add('hidden') : statsRow.classList.remove('hidden');
 
       const eleRow = document.getElementById('row-elevation');
-      const visibleEle = [
-        document.getElementById('chk-grade').checked,
-        document.getElementById('chk-ele').checked,
-        document.getElementById('chk-alt').checked
-      ].filter(Boolean).length;
-      eleRow.className = `grid-row grid-${visibleEle || 1}`;
-      if (visibleEle === 0) eleRow.classList.add('hidden');
-      else eleRow.classList.remove('hidden');
+      const vEle = [document.getElementById('chk-grade').checked, document.getElementById('chk-ele').checked, document.getElementById('chk-alt').checked].filter(Boolean).length;
+      eleRow.className = `grid-row grid-${vEle || 1}`;
+      vEle === 0 ? eleRow.classList.add('hidden') : eleRow.classList.remove('hidden');
 
-      const mapChk = document.getElementById('chk-map');
-      isMapTileEnabled = mapChk ? mapChk.checked : true;
-
-      if (isMapTileEnabled) {
-        document.body.classList.remove('map-disabled');
-      } else {
-        document.body.classList.add('map-disabled');
-      }
-
-      if (map && isMapTileEnabled) {
-        setTimeout(() => map.invalidateSize(), 150);
-      }
+      isMapTileEnabled = document.getElementById('chk-map') ? document.getElementById('chk-map').checked : true;
+      isMapTileEnabled ? document.body.classList.remove('map-disabled') : document.body.classList.add('map-disabled');
+      if (map && isMapTileEnabled) setTimeout(() => map.invalidateSize(), 150);
     }
 
     function loadLayoutPreferences() {
       const savedPrefs = localStorage.getItem('horo_card_visibility_prefs');
       if (savedPrefs) {
-        const visibilityPrefs = JSON.parse(savedPrefs);
-        Object.keys(visibilityPrefs).forEach(cardId => {
-          const toggleItem = document.querySelector(`.toggle-item[data-card="${cardId}"]`);
-          if (toggleItem) {
-            const checkbox = toggleItem.querySelector('input[type="checkbox"]');
-            if (checkbox) checkbox.checked = visibilityPrefs[cardId];
-          }
+        const prefs = JSON.parse(savedPrefs);
+        Object.keys(prefs).forEach(cardId => {
+          const item = document.querySelector(`.toggle-item[data-card="${cardId}"]`);
+          if (item) item.querySelector('input').checked = prefs[cardId];
         });
       }
       updateLayout();
@@ -973,223 +415,225 @@
     }
 
     function setupHoldToStop() {
-      const stopBtn = document.getElementById('stopBtn');
-      const fillOverlay = document.getElementById('stopFill');
-
+      const stopBtn = document.getElementById('stopBtn'), fill = document.getElementById('stopFill');
       const startHold = (e) => {
         e.preventDefault();
-        stopHoldProgress = 0;
-        fillOverlay.style.width = '0%';
+        stopHoldProgress = 0; fill.style.width = '0%';
         stopInterval = setInterval(() => {
-          stopHoldProgress += 50;
-          fillOverlay.style.width = `${Math.min((stopHoldProgress / 2000) * 100, 100)}%`;
-          if (stopHoldProgress >= 2000) {
-            clearInterval(stopInterval);
-            fillOverlay.style.width = '0%';
-            executeStopRide();
-          }
+          stopHoldProgress += 50; fill.style.width = `${Math.min((stopHoldProgress / 2000) * 100, 100)}%`;
+          if (stopHoldProgress >= 2000) { clearInterval(stopInterval); fill.style.width = '0%'; executeStopRide(); }
         }, 50);
       };
-
-      const cancelHold = () => {
-        if (stopInterval) clearInterval(stopInterval);
-        stopHoldProgress = 0;
-        fillOverlay.style.width = '0%';
-      };
-
-      stopBtn.addEventListener('mousedown', startHold);
-      stopBtn.addEventListener('mouseup', cancelHold);
-      stopBtn.addEventListener('touchstart', startHold, { passive: false });
-      stopBtn.addEventListener('touchend', cancelHold);
+      const cancelHold = () => { clearInterval(stopInterval); stopHoldProgress = 0; fill.style.width = '0%'; };
+      stopBtn.addEventListener('mousedown', startHold); stopBtn.addEventListener('mouseup', cancelHold);
+      stopBtn.addEventListener('touchstart', startHold, { passive: false }); stopBtn.addEventListener('touchend', cancelHold);
     }
+
+    // --- Core GPS and Timer Logic ---
 
     function startRide() {
       requestWakeLock();
       if (rideState === 'RUNNING') return;
 
       rideState = 'RUNNING';
-      isManualStopped = false;
-
       document.getElementById('startBtn').classList.add('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.add('active');
       document.getElementById('statusText').innerText = 'RECORDING';
 
       startTime = Date.now() - elapsedTime;
-      if (!timerInterval) {
-        timerInterval = setInterval(updateTimer, 1000);
-      }
+      lastPositionTime = Date.now();
 
+      if (!timerInterval) timerInterval = setInterval(timerTick, 1000);
+      
       if (navigator.geolocation && !watchId) {
-        watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        });
+        watchId = navigator.geolocation.watchPosition(handlePosition, handleError, { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 });
       }
     }
 
     function pauseRide() {
-      if (rideState !== 'RUNNING' && rideState !== 'AUTO-PAUSED') return;
-
+      if (rideState === 'STOPPED' || rideState === 'PAUSED') return;
+      
       rideState = 'PAUSED';
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.add('active-pause');
       document.getElementById('statusDot').classList.remove('active');
       document.getElementById('statusText').innerText = 'PAUSED';
+      
+      smoothedSpeedMps = 0;
+      updateDisplay({ speed: 0, altitude: lastPosition ? lastPosition.altitude : null });
     }
 
     function executeStopRide() {
       if (rideState === 'STOPPED') return;
-
       rideState = 'STOPPED';
-      isManualStopped = true;
 
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
 
       document.getElementById('startBtn').classList.remove('active-start');
       document.getElementById('pauseBtn').classList.remove('active-pause');
       document.getElementById('statusDot').classList.remove('active');
       document.getElementById('statusText').innerText = 'STOPPED';
 
-      if (gpxTrackPoints.length > 2) {
-        saveRideToHistory();
-        showSavedToast();
+      if (gpxTrackPoints.length > 2) { saveRideToHistory(); showSavedToast(); }
+    }
+
+    function timerTick() {
+      if (rideState === 'RUNNING') {
+        elapsedTime = Date.now() - startTime;
+        
+        // Auto-pause check: Zero out speed if GPS goes entirely silent for 4+ seconds
+        if (Date.now() - lastPositionTime > 4000) {
+          smoothedSpeedMps = 0;
+        }
+
+        if (smoothedSpeedMps < 0.4) {
+          zeroSpeedCount++;
+          if (zeroSpeedCount >= 3) {
+            rideState = 'AUTO-PAUSED';
+            document.getElementById('statusText').innerText = 'AUTO-PAUSED';
+            document.getElementById('statusDot').classList.remove('active');
+            document.getElementById('pauseBtn').classList.add('active-pause');
+            document.getElementById('startBtn').classList.remove('active-start');
+            updateDisplay({ speed: 0, altitude: lastPosition ? lastPosition.altitude : null });
+          } else {
+            movingTimeSecs++;
+          }
+        } else {
+          zeroSpeedCount = 0;
+          movingTimeSecs++;
+        }
       }
+      updateTimerDisplay();
     }
 
     function handlePosition(pos) {
-      if (isManualStopped) return;
+      if (rideState === 'STOPPED' || rideState === 'PAUSED') return;
+
+      const now = Date.now();
+      lastPositionTime = now;
 
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
-      const alt = pos.coords.altitude || 0;
-      const rawSpeed = pos.coords.speed || 0;
+      const alt = pos.coords.altitude || (lastPosition ? lastPosition.altitude : null);
+      const rawSpeed = pos.coords.speed !== null ? pos.coords.speed : null;
       const accuracy = pos.coords.accuracy || 0;
-      const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
 
-      if (accuracy > 25) return;
+      let currentSpeed = 0;
+      let distSinceLast = 0;
 
-      const latLng = [lat, lon];
-
-      if (isMapTileEnabled && map) {
-        const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
-        if (!userMarker) {
-          userMarker = L.circleMarker(latLng, { radius: 6, color: trackColor, fillColor: trackColor, fillOpacity: 1 }).addTo(map);
-          map.setView(latLng, 16);
+      if (lastPosition) {
+        distSinceLast = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
+        
+        // Manual speed fallback if device reports null
+        if (rawSpeed === null) {
+          const timeDiffSecs = (now - lastPosition.time) / 1000;
+          if (timeDiffSecs > 0) currentSpeed = distSinceLast / timeDiffSecs;
         } else {
-          userMarker.setLatLng(latLng);
-          map.panTo(latLng);
-        }
-      }
-
-      let filteredSpeed = rawSpeed < 0.22 ? 0 : rawSpeed;
-
-      smoothedSpeedMps = (smoothedSpeedMps * 0.6) + (filteredSpeed * 0.4);
-      if (smoothedSpeedMps < 0.22) smoothedSpeedMps = 0;
-
-      if (smoothedSpeedMps === 0) {
-        zeroSpeedCount++;
-        if (zeroSpeedCount >= 2 && rideState === 'RUNNING') {
-          rideState = 'AUTO-PAUSED';
-          if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-          }
-          document.getElementById('statusText').innerText = 'AUTO-PAUSED';
-          document.getElementById('statusDot').classList.remove('active');
-          document.getElementById('startBtn').classList.remove('active-start');
-          document.getElementById('pauseBtn').classList.add('active-pause');
+          currentSpeed = rawSpeed;
         }
       } else {
-        zeroSpeedCount = 0;
-        if (rideState === 'AUTO-PAUSED' && !isManualStopped) {
-          rideState = 'RUNNING';
-          startTime = Date.now() - elapsedTime;
-          if (!timerInterval) {
-            timerInterval = setInterval(updateTimer, 1000);
-          }
-          document.getElementById('statusText').innerText = 'RECORDING';
-          document.getElementById('statusDot').classList.add('active');
-          document.getElementById('pauseBtn').classList.remove('active-pause');
-          document.getElementById('startBtn').classList.add('active-start');
-        }
+        currentSpeed = rawSpeed || 0;
       }
 
-      if (rideState === 'RUNNING' && smoothedSpeedMps > 0) {
-        movingTimeSecs++;
+      // Smooth inputs & cut micro-noise
+      if (currentSpeed < 0.3) currentSpeed = 0;
+      smoothedSpeedMps = (smoothedSpeedMps * 0.7) + (currentSpeed * 0.3);
+      if (smoothedSpeedMps < 0.3) smoothedSpeedMps = 0;
 
-        if (lastPosition) {
-          const d = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
+      // Auto-Resume Handler
+      if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps >= 0.4) {
+        rideState = 'RUNNING';
+        zeroSpeedCount = 0;
+        startTime = Date.now() - elapsedTime; // Adjusts start to exclude paused time
+        document.getElementById('statusText').innerText = 'RECORDING';
+        document.getElementById('statusDot').classList.add('active');
+        document.getElementById('pauseBtn').classList.remove('active-pause');
+        document.getElementById('startBtn').classList.add('active-start');
+      }
+
+      // Record Distance / Trail ONLY if accuracy is decent (prevents crazy GPS jumps)
+      if (accuracy <= 30 && rideState === 'RUNNING') {
+        if (lastPosition && distSinceLast >= 2.0) {
+          totalDistanceMeters += distSinceLast;
           
-          if (d >= 3.0) {
-            totalDistanceMeters += d;
-            if (isMapTileEnabled && routePolyline) routePolyline.addLatLng(latLng);
-
-            if (alt !== null && lastPosition.altitude !== null) {
-              const eleDiff = alt - lastPosition.altitude;
-              if (eleDiff > 2.0) totalEleGain += eleDiff;
-              currentGrade = (eleDiff / d) * 100;
-              if (Math.abs(currentGrade) > 35) currentGrade = 0;
-            }
-
-            gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
-            lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: smoothedSpeedMps };
+          if (alt !== null && lastPosition.altitude !== null) {
+            const eleDiff = alt - lastPosition.altitude;
+            if (eleDiff > 1.5) totalEleGain += eleDiff;
+            currentGrade = (eleDiff / distSinceLast) * 100;
+            if (Math.abs(currentGrade) > 35) currentGrade = 0;
           }
-        } else {
-          gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: currentGrade, time: timestamp });
-          lastPosition = { latitude: lat, longitude: lon, altitude: alt, speed: smoothedSpeedMps };
+
+          gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: currentGrade, time: new Date().toISOString() });
+          if (isMapTileEnabled && routePolyline) routePolyline.addLatLng([lat, lon]);
+          lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
+        } else if (!lastPosition) {
+          lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
+          gpxTrackPoints.push({ lat, lon, alt, speed: smoothedSpeedMps, distance: totalDistanceMeters, grade: 0, time: new Date().toISOString() });
         }
 
         if (smoothedSpeedMps > maxSpeedMps) maxSpeedMps = smoothedSpeedMps;
+      } else if (!lastPosition && accuracy <= 50) {
+        // Initial loose lock just to get started
+        lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
       }
 
-      updateDisplay({ speed: (rideState === 'RUNNING' ? smoothedSpeedMps : 0), altitude: alt });
+      // ALWAYS Update UI and Map (Even if accuracy is > 30 so user sees the app hasn't frozen)
+      if (isMapTileEnabled && map) {
+        if (!userMarker) {
+          const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
+          userMarker = L.circleMarker([lat, lon], { radius: 6, color: trackColor, fillColor: trackColor, fillOpacity: 1 }).addTo(map);
+          map.setView([lat, lon], 16);
+        } else {
+          userMarker.setLatLng([lat, lon]);
+          if (rideState === 'RUNNING') map.panTo([lat, lon]);
+        }
+      }
+
+      updateDisplay({ speed: rideState === 'RUNNING' ? smoothedSpeedMps : 0, altitude: alt });
     }
 
     function updateDisplay(pos) {
       const currSpeed = isMetric ? (pos.speed * 3.6) : (pos.speed * 2.23694);
-      const maxSpeed = isMetric ? (maxSpeedMps * 3.6) : (maxSpeedMps * 2.23694);
-      const distance = isMetric ? (totalDistanceMeters / 1000) : (totalDistanceMeters / 1609.34);
-      
-      const avgSpeedMps = movingTimeSecs > 0 ? (totalDistanceMeters / movingTimeSecs) : 0;
-      const avgSpeed = isMetric ? (avgSpeedMps * 3.6) : (avgSpeedMps * 2.23694);
-      
+      const maxSpd = isMetric ? (maxSpeedMps * 3.6) : (maxSpeedMps * 2.23694);
+      const dist = isMetric ? (totalDistanceMeters / 1000) : (totalDistanceMeters / 1609.34);
+      const avgMps = movingTimeSecs > 0 ? (totalDistanceMeters / movingTimeSecs) : 0;
+      const avgSpd = isMetric ? (avgMps * 3.6) : (avgMps * 2.23694);
       const eleGain = isMetric ? totalEleGain : totalEleGain * 3.28084;
-      const altitude = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : '--';
+      const alt = pos.altitude !== null ? (isMetric ? pos.altitude : pos.altitude * 3.28084) : '--';
 
       document.getElementById('speedVal').innerText = currSpeed.toFixed(1);
-      document.getElementById('distVal').innerHTML = `${distance.toFixed(2)} <span>${isMetric ? 'km' : 'mi'}</span>`;
-      document.getElementById('avgSpeedVal').innerHTML = `${avgSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
-      document.getElementById('maxSpeedVal').innerHTML = `${maxSpeed.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('distVal').innerHTML = `${dist.toFixed(2)} <span>${isMetric ? 'km' : 'mi'}</span>`;
+      document.getElementById('avgSpeedVal').innerHTML = `${avgSpd.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('maxSpeedVal').innerHTML = `${maxSpd.toFixed(1)} <span>${isMetric ? 'km/h' : 'mph'}</span>`;
       document.getElementById('gradeVal').innerHTML = `${currentGrade.toFixed(1)} <span>%</span>`;
       document.getElementById('eleGainVal').innerHTML = `${Math.round(eleGain)} <span>${isMetric ? 'm' : 'ft'}</span>`;
-      document.getElementById('altVal').innerHTML = `${altitude !== '--' ? Math.round(altitude) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
+      document.getElementById('altVal').innerHTML = `${alt !== '--' ? Math.round(alt) : '--'} <span>${isMetric ? 'm' : 'ft'}</span>`;
     }
 
-    function updateTimer() {
-      if (rideState === 'RUNNING') {
-        elapsedTime = Date.now() - startTime;
-      }
+    function updateTimerDisplay() {
       const totalSecs = Math.floor(elapsedTime / 1000);
       const hrs = Math.floor(totalSecs / 3600);
       const mins = Math.floor((totalSecs % 3600) / 60);
       const secs = totalSecs % 60;
+      document.getElementById('timerVal').innerText = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
 
-      document.getElementById('timerVal').innerText =
-        `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    function confirmAndExecuteReset() {
+      document.getElementById('resetConfirmModal').classList.remove('active');
+      executeStopRide();
+      elapsedTime = 0; movingTimeSecs = 0; totalDistanceMeters = 0; maxSpeedMps = 0; smoothedSpeedMps = 0; totalEleGain = 0; currentGrade = 0; lastPosition = null; lastPositionTime = 0; gpxTrackPoints = [];
+      document.getElementById('statusText').innerText = 'READY';
+      document.getElementById('timerVal').innerText = "00:00:00";
+      document.getElementById('speedVal').innerText = "0.0";
+      document.getElementById('distVal').innerHTML = `0.00 <span>${isMetric ? 'km' : 'mi'}</span>`;
+      document.getElementById('avgSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('maxSpeedVal').innerHTML = `0.0 <span>${isMetric ? 'km/h' : 'mph'}</span>`;
+      document.getElementById('gradeVal').innerHTML = `0.0 <span>%</span>`;
+      document.getElementById('eleGainVal').innerHTML = `0 <span>${isMetric ? 'm' : 'ft'}</span>`;
+      document.getElementById('altVal').innerHTML = `-- <span>${isMetric ? 'm' : 'ft'}</span>`;
+      if (routePolyline) routePolyline.setLatLngs([]);
     }
 
     function showSavedToast() {
@@ -1201,109 +645,53 @@
     function saveRideToHistory() {
       const dateStr = new Date().toISOString().split('T')[0];
       const distStr = (isMetric ? (totalDistanceMeters / 1000) : (totalDistanceMeters / 1609.34)).toFixed(2) + (isMetric ? ' km' : ' mi');
-      const timeStr = document.getElementById('timerVal').innerText;
-
-      const newRide = {
-        id: Date.now(),
-        date: dateStr,
-        distance: distStr,
-        time: timeStr,
-        points: [...gpxTrackPoints]
-      };
-
-      rideHistory.unshift(newRide);
+      rideHistory.unshift({ id: Date.now(), date: dateStr, distance: distStr, time: document.getElementById('timerVal').innerText, points: [...gpxTrackPoints] });
       localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
       renderRideHistory();
     }
 
     function loadRideHistory() {
       const saved = localStorage.getItem('horo_ride_history');
-      if (saved) {
-        rideHistory = JSON.parse(saved);
-        renderRideHistory();
-      }
+      if (saved) { rideHistory = JSON.parse(saved); renderRideHistory(); }
     }
 
     function renderRideHistory() {
       const container = document.getElementById('historyContainer');
       container.innerHTML = '';
-
-      if (rideHistory.length === 0) {
-        container.innerHTML = `<div style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 20px 0;">No saved rides found.</div>`;
-        return;
-      }
-
+      if (rideHistory.length === 0) { container.innerHTML = `<div style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 20px 0;">No saved rides found.</div>`; return; }
       rideHistory.forEach(ride => {
         const item = document.createElement('div');
         item.className = 'history-item';
-        item.innerHTML = `
-          <div>
-            <div class="history-date">${ride.date}</div>
-            <div class="history-stats">${ride.distance} • ${ride.time}</div>
-          </div>
-          <div class="history-actions">
-            <button class="history-btn gpx-btn" onclick="exportHistoryGPX(${ride.id})">GPX</button>
-            <button class="history-btn" style="color: var(--accent-red);" onclick="deleteHistoryRide(${ride.id})">✕</button>
-          </div>
-        `;
+        item.innerHTML = `<div><div class="history-date">${ride.date}</div><div class="history-stats">${ride.distance} • ${ride.time}</div></div><div class="history-actions"><button class="history-btn gpx-btn" onclick="exportHistoryGPX(${ride.id})">GPX</button><button class="history-btn" style="color: var(--accent-red);" onclick="deleteHistoryRide(${ride.id})">✕</button></div>`;
         container.appendChild(item);
       });
     }
 
-    function deleteHistoryRide(id) {
-      rideHistory = rideHistory.filter(r => r.id !== id);
-      localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory));
-      renderRideHistory();
-    }
+    function deleteHistoryRide(id) { rideHistory = rideHistory.filter(r => r.id !== id); localStorage.setItem('horo_ride_history', JSON.stringify(rideHistory)); renderRideHistory(); }
 
-    function exportHistoryGPX(id) {
-      const ride = rideHistory.find(r => r.id === id);
-      if (ride) generateGPXDownload(ride.points, `HoroGPS_${ride.date}.gpx`);
-    }
+    function exportHistoryGPX(id) { const ride = rideHistory.find(r => r.id === id); if (ride) generateGPXDownload(ride.points, `HoroGPS_${ride.date}.gpx`); }
 
     function generateGPXDownload(points, filename) {
-      let gpxXml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-      gpxXml += `<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\n`;
-      gpxXml += `  <metadata><name>${filename}</name><time>${new Date().toISOString()}</time></metadata>\n`;
-      gpxXml += `  <trk><name>放浪 Ride</name><trkseg>\n`;
-
+      let gpxXml = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="放浪 Bike Computer" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">\n  <metadata><name>${filename}</name><time>${new Date().toISOString()}</time></metadata>\n  <trk><name>放浪 Ride</name><trkseg>\n`;
       points.forEach(pt => {
-        gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}">\n`;
-        gpxXml += `        <ele>${(pt.alt || 0).toFixed(1)}</ele>\n`;
-        gpxXml += `        <time>${pt.time}</time>\n`;
-        gpxXml += `        <speed>${(pt.speed || 0).toFixed(2)}</speed>\n`;
-        if (pt.distance !== undefined) {
-          gpxXml += `        <extensions><gpxtpx:TrackPointExtension><gpxtpx:distance>${pt.distance.toFixed(1)}</gpxtpx:distance></gpxtpx:TrackPointExtension></extensions>\n`;
-        }
+        gpxXml += `      <trkpt lat="${pt.lat}" lon="${pt.lon}">\n        <ele>${(pt.alt || 0).toFixed(1)}</ele>\n        <time>${pt.time}</time>\n        <speed>${(pt.speed || 0).toFixed(2)}</speed>\n`;
+        if (pt.distance !== undefined) gpxXml += `        <extensions><gpxtpx:TrackPointExtension><gpxtpx:distance>${pt.distance.toFixed(1)}</gpxtpx:distance></gpxtpx:TrackPointExtension></extensions>\n`;
         gpxXml += `      </trkpt>\n`;
       });
-
       gpxXml += `    </trkseg></trk></gpx>`;
-
-      const blob = new Blob([gpxXml], { type: 'application/gpx+xml' });
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      link.href = URL.createObjectURL(new Blob([gpxXml], { type: 'application/gpx+xml' }));
+      link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
     function calcDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const R = 6371e3, φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180, Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     function handleError(err) {
-      document.getElementById('statusText').innerText = 'SEARCHING GPS';
+      if (rideState === 'RUNNING' || rideState === 'AUTO-PAUSED') document.getElementById('statusText').innerText = 'SEARCHING GPS';
     }
   </script>
 </body>
