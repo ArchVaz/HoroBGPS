@@ -296,6 +296,10 @@
     let currentGrade = 0;
     let lastPosition = null;
 
+    // Warm-Up Locks (Stops Start Jump)
+    let gpsFixCount = 0;
+    let rideStartTimeMs = 0;
+
     let gpxTrackPoints = [];
     let rideHistory = [];
     let map = null, routePolyline = null, userMarker = null;
@@ -441,7 +445,7 @@
       stopBtn.addEventListener('touchstart', startHold, { passive: false }); stopBtn.addEventListener('touchend', cancelHold);
     }
 
-    // --- ANTI-DRIFT GPS & TIMER LOGIC ---
+    // --- WARM-UP DRIFT PREVENTING GPS ENGINE ---
 
     function startRide() {
       requestWakeLock();
@@ -454,7 +458,9 @@
       document.getElementById('statusText').innerText = 'RECORDING';
 
       startTime = Date.now() - elapsedTime;
+      rideStartTimeMs = Date.now();
       lastPositionTime = Date.now();
+      gpsFixCount = 0; // Reset warm-up fix counter
 
       if (!timerInterval) timerInterval = setInterval(timerTick, 1000);
       
@@ -495,14 +501,14 @@
       if (rideState === 'RUNNING') {
         elapsedTime = Date.now() - startTime;
         
-        // If GPS signal drops or phone goes completely still for 4+ seconds
+        // Zero speed if phone loses GPS feed for 4+ secs
         if (Date.now() - lastPositionTime > 4000) {
           smoothedSpeedMps = 0;
         }
 
         if (smoothedSpeedMps === 0) {
           zeroSpeedCount++;
-          if (zeroSpeedCount >= 3) { // Trigger Auto-Pause after 3 seconds of zero movement
+          if (zeroSpeedCount >= 3) {
             rideState = 'AUTO-PAUSED';
             document.getElementById('statusText').innerText = 'AUTO-PAUSED';
             document.getElementById('statusDot').classList.remove('active');
@@ -523,6 +529,7 @@
 
       const now = Date.now();
       lastPositionTime = now;
+      gpsFixCount++;
 
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
@@ -530,33 +537,39 @@
       const rawSpeed = pos.coords.speed;
       const accuracy = pos.coords.accuracy || 0;
 
-      // Filter 1: Ignore wildly inaccurate GPS fixes (>20 meters radius)
-      if (accuracy > 20) return;
+      // Filter 1: Discard wild accuracy error fixes
+      if (accuracy > 25) return;
+
+      // Filter 2: DISCARD INITIAL CACHED FIXES (Prevents the Start Speed Spike)
+      if (gpsFixCount <= 2 || (now - rideStartTimeMs) < 2000) {
+        lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
+        updateDisplay({ speed: 0, altitude: alt });
+        return;
+      }
 
       let currentSpeed = 0;
-      let distSinceLast = 0;
+      let distSinceLast = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
+      let timeDiffSecs = (now - lastPosition.time) / 1000;
 
-      if (lastPosition) {
-        distSinceLast = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
-        
-        // Calculate speed directly or use native speed
-        if (rawSpeed !== null && rawSpeed >= 0) {
-          currentSpeed = rawSpeed;
-        } else {
-          const timeDiffSecs = (now - lastPosition.time) / 1000;
-          if (timeDiffSecs > 0) currentSpeed = distSinceLast / timeDiffSecs;
-        }
+      // Filter 3: Hard Speed Ceiling Check (Discards jumps faster than 70 km/h ~ 19.4 m/s)
+      let calcSpeedMps = timeDiffSecs > 0 ? (distSinceLast / timeDiffSecs) : 0;
+      if (calcSpeedMps > 19.4) {
+        // Discard sudden satellite jump
+        lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
+        return;
+      }
+
+      if (rawSpeed !== null && rawSpeed >= 0) {
+        currentSpeed = rawSpeed;
       } else {
-        currentSpeed = rawSpeed || 0;
+        currentSpeed = calcSpeedMps;
       }
 
-      // Filter 2: Speed Gate (speeeds under 0.28 m/s ~ 1.0 km/h are zeroed out)
-      if (currentSpeed < 0.28) {
-        currentSpeed = 0;
-      }
+      // Filter 4: Speed Gate (speeeds under 1.0 km/h ~ 0.28 m/s are zeroed out)
+      if (currentSpeed < 0.28) currentSpeed = 0;
 
-      // Filter 3: Low-pass moving average to eliminate sudden speed spikes
-      smoothedSpeedMps = (currentSpeed * 0.25) + (smoothedSpeedMps * 0.75);
+      // Filter 5: Exponential Low-Pass Filter
+      smoothedSpeedMps = (currentSpeed * 0.3) + (smoothedSpeedMps * 0.7);
       if (smoothedSpeedMps < 0.28) smoothedSpeedMps = 0;
 
       // Auto-Resume Handler
@@ -571,10 +584,8 @@
       }
 
       if (rideState === 'RUNNING') {
-        // Filter 4: Movement Gate - Ignore movements smaller than 3.5m to stop standing drift
-        if (!lastPosition) {
-          lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
-        } else if (distSinceLast >= 3.5 && smoothedSpeedMps > 0) {
+        // Filter 6: Distance threshold (Must move > 3.0 meters to count towards total distance)
+        if (distSinceLast >= 3.0 && smoothedSpeedMps > 0) {
           totalDistanceMeters += distSinceLast;
 
           if (alt !== null && lastPosition.altitude !== null) {
@@ -593,7 +604,7 @@
         if (smoothedSpeedMps > maxSpeedMps) maxSpeedMps = smoothedSpeedMps;
       }
 
-      // Update map & display
+      // Render map marker
       if (isMapTileEnabled && map) {
         if (!userMarker) {
           const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
