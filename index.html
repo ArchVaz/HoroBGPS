@@ -296,8 +296,8 @@
     let currentGrade = 0;
     let lastPosition = null;
 
-    // Warm-Up Locks (Stops Start Jump)
-    let gpsFixCount = 0;
+    // GPS Warm-Up Anchors
+    let isAnchored = false;
     let rideStartTimeMs = 0;
 
     let gpxTrackPoints = [];
@@ -445,7 +445,7 @@
       stopBtn.addEventListener('touchstart', startHold, { passive: false }); stopBtn.addEventListener('touchend', cancelHold);
     }
 
-    // --- WARM-UP DRIFT PREVENTING GPS ENGINE ---
+    // --- REALTIME RESPONSIVE GPS LOGIC ---
 
     function startRide() {
       requestWakeLock();
@@ -460,7 +460,7 @@
       startTime = Date.now() - elapsedTime;
       rideStartTimeMs = Date.now();
       lastPositionTime = Date.now();
-      gpsFixCount = 0; // Reset warm-up fix counter
+      isAnchored = false;
 
       if (!timerInterval) timerInterval = setInterval(timerTick, 1000);
       
@@ -501,8 +501,8 @@
       if (rideState === 'RUNNING') {
         elapsedTime = Date.now() - startTime;
         
-        // Zero speed if phone loses GPS feed for 4+ secs
-        if (Date.now() - lastPositionTime > 4000) {
+        // Zero out speed if phone goes still or drops GPS signal for 3.5+ seconds
+        if (Date.now() - lastPositionTime > 3500) {
           smoothedSpeedMps = 0;
         }
 
@@ -529,7 +529,6 @@
 
       const now = Date.now();
       lastPositionTime = now;
-      gpsFixCount++;
 
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
@@ -537,12 +536,13 @@
       const rawSpeed = pos.coords.speed;
       const accuracy = pos.coords.accuracy || 0;
 
-      // Filter 1: Discard wild accuracy error fixes
-      if (accuracy > 25) return;
+      // Relaxed accuracy cutoff (60m) so mobile browsers never get blocked
+      if (accuracy > 60) return;
 
-      // Filter 2: DISCARD INITIAL CACHED FIXES (Prevents the Start Speed Spike)
-      if (gpsFixCount <= 2 || (now - rideStartTimeMs) < 2000) {
+      // Initial Anchor Fix: Anchor starting point without registering fake speed
+      if (!isAnchored || (now - rideStartTimeMs) < 1500) {
         lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
+        isAnchored = true;
         updateDisplay({ speed: 0, altitude: alt });
         return;
       }
@@ -551,29 +551,28 @@
       let distSinceLast = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
       let timeDiffSecs = (now - lastPosition.time) / 1000;
 
-      // Filter 3: Hard Speed Ceiling Check (Discards jumps faster than 70 km/h ~ 19.4 m/s)
-      let calcSpeedMps = timeDiffSecs > 0 ? (distSinceLast / timeDiffSecs) : 0;
-      if (calcSpeedMps > 19.4) {
-        // Discard sudden satellite jump
+      // Calculate speed: prioritize device native speed when available
+      if (rawSpeed !== null && rawSpeed >= 0) {
+        currentSpeed = rawSpeed;
+      } else {
+        currentSpeed = timeDiffSecs > 0 ? (distSinceLast / timeDiffSecs) : 0;
+      }
+
+      // Hard Cap: Cap realistic cycling speed at 70 km/h (19.4 m/s) to block satellite teleportation
+      if (currentSpeed > 19.4) {
         lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
         return;
       }
 
-      if (rawSpeed !== null && rawSpeed >= 0) {
-        currentSpeed = rawSpeed;
-      } else {
-        currentSpeed = calcSpeedMps;
-      }
+      // Speed Gate: Zero out noise below 0.3 m/s (~1.1 km/h)
+      if (currentSpeed < 0.3) currentSpeed = 0;
 
-      // Filter 4: Speed Gate (speeeds under 1.0 km/h ~ 0.28 m/s are zeroed out)
-      if (currentSpeed < 0.28) currentSpeed = 0;
-
-      // Filter 5: Exponential Low-Pass Filter
-      smoothedSpeedMps = (currentSpeed * 0.3) + (smoothedSpeedMps * 0.7);
-      if (smoothedSpeedMps < 0.28) smoothedSpeedMps = 0;
+      // Lightweight responsive smoothing
+      smoothedSpeedMps = (currentSpeed * 0.5) + (smoothedSpeedMps * 0.5);
+      if (smoothedSpeedMps < 0.3) smoothedSpeedMps = 0;
 
       // Auto-Resume Handler
-      if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps >= 0.28) {
+      if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps >= 0.3) {
         rideState = 'RUNNING';
         zeroSpeedCount = 0;
         startTime = Date.now() - elapsedTime; 
@@ -584,13 +583,13 @@
       }
 
       if (rideState === 'RUNNING') {
-        // Filter 6: Distance threshold (Must move > 3.0 meters to count towards total distance)
-        if (distSinceLast >= 3.0 && smoothedSpeedMps > 0) {
+        // Step Gate: Register distance step if movement >= 1.2 meters
+        if (distSinceLast >= 1.2 && smoothedSpeedMps > 0) {
           totalDistanceMeters += distSinceLast;
 
           if (alt !== null && lastPosition.altitude !== null) {
             const eleDiff = alt - lastPosition.altitude;
-            if (eleDiff > 1.5) totalEleGain += eleDiff;
+            if (eleDiff > 1.0) totalEleGain += eleDiff;
             currentGrade = (eleDiff / distSinceLast) * 100;
             if (Math.abs(currentGrade) > 35) currentGrade = 0;
           }
@@ -604,7 +603,7 @@
         if (smoothedSpeedMps > maxSpeedMps) maxSpeedMps = smoothedSpeedMps;
       }
 
-      // Render map marker
+      // Render Map Marker
       if (isMapTileEnabled && map) {
         if (!userMarker) {
           const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
@@ -648,7 +647,7 @@
     function confirmAndExecuteReset() {
       document.getElementById('resetConfirmModal').classList.remove('active');
       executeStopRide();
-      elapsedTime = 0; movingTimeSecs = 0; totalDistanceMeters = 0; maxSpeedMps = 0; smoothedSpeedMps = 0; totalEleGain = 0; currentGrade = 0; lastPosition = null; lastPositionTime = 0; gpxTrackPoints = [];
+      elapsedTime = 0; movingTimeSecs = 0; totalDistanceMeters = 0; maxSpeedMps = 0; smoothedSpeedMps = 0; totalEleGain = 0; currentGrade = 0; lastPosition = null; lastPositionTime = 0; isAnchored = false; gpxTrackPoints = [];
       document.getElementById('statusText').innerText = 'READY';
       document.getElementById('timerVal').innerText = "00:00:00";
       document.getElementById('speedVal').innerText = "0.0";
