@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horo-v21-realtime-gps-fix';
+const CACHE_NAME = 'horo-v24-splash-screen';
 const ASSETS = [
   './',
   './index.html',

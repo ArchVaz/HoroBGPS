@@ -45,6 +45,31 @@
       display: flex; flex-direction: column; padding: 8px; gap: 6px;
     }
 
+    /* Splash / Intro Screen */
+    .splash-screen {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #000000;
+      z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .splash-screen.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-text {
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: lowercase;
+      text-align: center;
+      font-style: italic;
+      opacity: 0.9;
+    }
+
     .header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; flex-shrink: 0; }
     .logo-img { height: 22px; width: auto; object-fit: contain; }
     .header-actions { display: flex; align-items: center; gap: 10px; }
@@ -165,6 +190,11 @@
 </head>
 <body>
 
+  <!-- Splash / Intro Screen -->
+  <div id="splashScreen" class="splash-screen">
+    <div class="splash-text">for the restless</div>
+  </div>
+
   <!-- Overlays -->
   <div id="toast" class="toast-notification">Ride Saved</div>
   <div id="resetConfirmModal" class="modal-overlay">
@@ -272,6 +302,12 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then((reg) => reg.update()).catch(() => {});
     }
+
+    // Splash Screen Dismiss Logic
+    const splashScreen = document.getElementById('splashScreen');
+    const dismissSplash = () => splashScreen.classList.add('fade-out');
+    setTimeout(dismissSplash, 2000);
+    splashScreen.addEventListener('click', dismissSplash);
 
     let wakeLock = null;
     let isMetric = true;
@@ -501,7 +537,6 @@
       if (rideState === 'RUNNING') {
         elapsedTime = Date.now() - startTime;
         
-        // Zero out speed if phone goes still or drops GPS signal for 3.5+ seconds
         if (Date.now() - lastPositionTime > 3500) {
           smoothedSpeedMps = 0;
         }
@@ -536,10 +571,8 @@
       const rawSpeed = pos.coords.speed;
       const accuracy = pos.coords.accuracy || 0;
 
-      // Relaxed accuracy cutoff (60m) so mobile browsers never get blocked
       if (accuracy > 60) return;
 
-      // Initial Anchor Fix: Anchor starting point without registering fake speed
       if (!isAnchored || (now - rideStartTimeMs) < 1500) {
         lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
         isAnchored = true;
@@ -551,27 +584,22 @@
       let distSinceLast = calcDistance(lastPosition.latitude, lastPosition.longitude, lat, lon);
       let timeDiffSecs = (now - lastPosition.time) / 1000;
 
-      // Calculate speed: prioritize device native speed when available
       if (rawSpeed !== null && rawSpeed >= 0) {
         currentSpeed = rawSpeed;
       } else {
         currentSpeed = timeDiffSecs > 0 ? (distSinceLast / timeDiffSecs) : 0;
       }
 
-      // Hard Cap: Cap realistic cycling speed at 70 km/h (19.4 m/s) to block satellite teleportation
       if (currentSpeed > 19.4) {
         lastPosition = { latitude: lat, longitude: lon, altitude: alt, time: now };
         return;
       }
 
-      // Speed Gate: Zero out noise below 0.3 m/s (~1.1 km/h)
       if (currentSpeed < 0.3) currentSpeed = 0;
 
-      // Lightweight responsive smoothing
       smoothedSpeedMps = (currentSpeed * 0.5) + (smoothedSpeedMps * 0.5);
       if (smoothedSpeedMps < 0.3) smoothedSpeedMps = 0;
 
-      // Auto-Resume Handler
       if (rideState === 'AUTO-PAUSED' && smoothedSpeedMps >= 0.3) {
         rideState = 'RUNNING';
         zeroSpeedCount = 0;
@@ -583,7 +611,6 @@
       }
 
       if (rideState === 'RUNNING') {
-        // Step Gate: Register distance step if movement >= 1.2 meters
         if (distSinceLast >= 1.2 && smoothedSpeedMps > 0) {
           totalDistanceMeters += distSinceLast;
 
@@ -603,7 +630,6 @@
         if (smoothedSpeedMps > maxSpeedMps) maxSpeedMps = smoothedSpeedMps;
       }
 
-      // Render Map Marker
       if (isMapTileEnabled && map) {
         if (!userMarker) {
           const trackColor = currentTheme === 'sun' ? '#00ff66' : '#30d158';
